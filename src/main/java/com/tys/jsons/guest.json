@@ -1,0 +1,19 @@
+
+Adding New Guest
+http://localhost:8080/guests
+{
+  "guestNationalId":23,
+  "guestCountryCode":"156",
+  "guestPlateNumber": "06SZR77",
+  "guestCheckInDate":"2025-03-05",
+  "guestCheckOutDate": "2025-03-08",
+  "guestPhoneNumber":"05069787977",
+  "guestName":"Gizem",
+  "guestSurname":"TATARINHO",
+  "guestJob":"Engineer",
+  "isGuestShortStay": false,
+  "guestEmail":"yesildal",
+  "guestBookingDate":"2024-05-08",
+  "guestAdress":"gizem@gmail.com"
+
+}

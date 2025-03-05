@@ -1,0 +1,9 @@
+Adding New Room
+http://localhost:8080/rooms
+
+{
+  "roomNumber": 545,
+  "isFull": true,
+  "capacity":3,
+  "isSeaView":true
+}

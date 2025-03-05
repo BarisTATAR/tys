@@ -1,0 +1,19 @@
+
+
+Adding New Company
+http://localhost:8080/companies
+
+
+{
+  "companyId":1,
+  "companyName":"Baris",
+  "companyAddress":"Yeni mahalle 212.sokak No:27 Yatağan/Muğla",
+  "companyCategory":"LUX_OTEL",
+  "companyStartYear":1996,
+  "companyEmail":"baris@hot",
+  "companyPhoneNumber":"05535754277",
+  "companyTaxNumber":"256",
+  "companyFacilityNumber":"123",
+  "isCompanyElectricChargeStation":true,
+  "companyTotalRoomNumber":40
+}
