@@ -1,56 +1,56 @@
 package com.tys.model;
 
-import com.tys.enums.IsletmeKategorisi;
+import com.tys.enums.CompanyCategory;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@Table(name="Company")
+@Table(name = "COMPANY")
 public class Company {
 
     @Id
-    @Column(name = "companyId")
-    private Long companyId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "ID")
+    private Long id;
 
-    @Column(name = "companyName")
-    private String companyName;
+    @Column(name = "NAME")
+    private String name;
 
-    @Column(name = "companyAddress")
-    private String companyAddress;
+    @Column(name = "ADDRESS")
+    private String address;
 
-    @Column(name = "companyCategory")
-    private IsletmeKategorisi companyCategory;
+    @Column(name = "CATEGORY")
+    private CompanyCategory category;
 
-    @Column(name = "companyStartYear")
-    private int companyStartYear;
+    @Column(name = "START_YEAR")
+    private Integer startYear;
 
-    @Column(name = "companyEmail")
-    private String companyEmail;
+    @Column(name = "EMAIL")
+    private String email;
 
-    @Column(name = "companyPhoneNumber")
-    private String companyPhoneNumber;
+    @Column(name = "PHONE_NUMBER")
+    private String phoneNumber;
 
-    @Column(name = "companyTaxNumber")
-    private String companyTaxNumber;
+    @Column(name = "TAX_NUMBER")
+    private String taxNumber;
 
-    @Column(name = "companyFacilityNumber")
-    private String companyFacilityNumber;
+    @Column(name = "FACILITY_NUMBER")
+    private String facilityNumber;
 
-    @Column(name = "isCompanyElectricChargeStation")
-    private Boolean isCompanyElectricChargeStation;
+    @Column(name = "ELECTRIC_CHARGE_STATION")
+    private Boolean electricChargeStation;
 
-    @Column(name = "companyTotalRoomNumber")
-    private int companyTotalRoomNumber;
+    @Column(name = "TOTAL_ROOM_NUMBER")
+    private Integer totalRoomNumber;
 
 //    // Oda sayısı ve kaçar kişilik oldukları algoritması yapılacak
 //    @OneToMany(mappedBy="company")
 //    private List<Room> roomList;
-
 
 }
 
