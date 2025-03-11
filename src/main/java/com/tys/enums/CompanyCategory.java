@@ -1,6 +1,10 @@
 package com.tys.enums;
 
-public enum IsletmeKategorisi {
+import lombok.Getter;
+
+@Getter
+
+public enum CompanyCategory {
         OTEL("Otel"),
         TATIL_KOYU("Tatil Köyü"),
         PANSIYON("Pansiyon"),
@@ -10,9 +14,9 @@ public enum IsletmeKategorisi {
         LUX_OTEL("Lüks Otel"),
         BUTIK_OTEL("Butik Otel");
 
-    private final String isletmeKategoriAdi;
-    IsletmeKategorisi(String isletmeKategoriAdi) {
-        this.isletmeKategoriAdi = isletmeKategoriAdi;
+    private final String name;
+    CompanyCategory(String name) {
+        this.name = name;
     }
 
 }

@@ -1,27 +1,33 @@
 package com.tys.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@Table(name="Room")
+@Table(name = "ROOM")
 public class Room {
 
     @Id
-    @Column(name = "roomNumber")
-    private Long roomNumber;  // Odanın numarası
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "ID")
+    private Long id;
 
-    @Column(name = "isFull")
-    private Boolean isFull;        // Oda dolu mu? (true: dolu, false: boş)
+    @Column(name = "NUMBER")
+    private Integer number;            // Odanın numarası
 
-    @Column(name = "capacity")
-    private int capacity;          // Odanın kapasitesi (kaç kişi kalabilir?)
+    @Column(name = "FULL")
+    private Boolean full;              // Oda dolu mu? (true: dolu, false: boş)
 
-    @Column(name = "isSeaView")
-    private Boolean isSeaView; // Oda deniz manzaralı mı?
+    @Column(name = "CAPACITY")
+    private Integer capacity;          // Odanın kapasitesi (kaç kişi kalabilir?)
+
+    @Column(name = "SEA_VIEW")
+    private Boolean seaView;            // Oda deniz manzaralı mı?
 
 //    @ManyToOne
 //    @JoinColumn(name="company", nullable=false)
