@@ -3,7 +3,7 @@ http://localhost:8080/rooms
 
 {
   "roomNumber": 545,
-  "isFull": true,
+  "loaded": true,
   "capacity":3,
   "isSeaView":true
 }

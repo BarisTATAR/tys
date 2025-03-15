@@ -11,48 +11,48 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "GUEST")
+@Table(schema = "tys", name = "guest")
 public class Guest {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "NAME")
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "SURNAME")
+    @Column(name = "surname")
     private String surname;
 
-    @Column(name = "PHONE_NUMBER")
+    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "EMAIL")
+    @Column(name = "email")
     private String email;
 
-    @Column(name = "JOB")
+    @Column(name = "job")
     private String job;
 
-    @Column(name = "ADDRESS")
+    @Column(name = "address")
     private String address;
 
-    @Column(name = "COUNTRY_CODE")
+    @Column(name = "country_code")
     private Integer countryCode;
 
-    @Column(name = "PLATE_NUMBER")
+    @Column(name = "plate_number")
     private String plateNumber;
 
-    @Column(name = "SHORT_STAY")
+    @Column(name = "short_stay")
     private Boolean shortStay;
 
-    @Column(name = "BOOKING_DATE")
+    @Column(name = "booking_date")
     private LocalDate bookingDate;
 
-    @Column(name = "CHECK_IN_DATE")
+    @Column(name = "check_in_date")
     private LocalDate checkInDate;
 
-    @Column(name = "CHECK_OUT_DATE")
+    @Column(name = "check_out_date")
     private LocalDate checkOutDate;
 
 //    @ManyToOne

@@ -1,7 +1,8 @@
 package com.tys.controller;
 
-import com.tys.model.Company;
+import com.tys.request.CreateCompanyRequest;
 import com.tys.service.CompanyService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,18 +13,17 @@ public class CompanyController {
     public CompanyController(CompanyService companyService) {
         this.companyService = companyService;
     }
-@PostMapping
-    public Company createCompany(@RequestBody Company company){
 
-    return companyService.saveCompany(company);
-
+    @PostMapping
+    public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {
+        companyService.saveCompany(request);
+        return ResponseEntity.ok().build();
     }
-@DeleteMapping("/{id}")
-    public void deleteCompany(@PathVariable Long id) {
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCompany(@PathVariable Long id) {
         companyService.deleteCompany(id);
+        return ResponseEntity.ok().build();
     }
-
-
 
 }
