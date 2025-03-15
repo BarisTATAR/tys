@@ -10,42 +10,42 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "COMPANY")
+@Table(schema = "tys", name = "company")
 public class Company {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "NAME")
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "ADDRESS")
+    @Column(name = "address")
     private String address;
 
-    @Column(name = "CATEGORY")
+    @Column(name = "category")
     private CompanyCategory category;
 
-    @Column(name = "START_YEAR")
+    @Column(name = "start_year")
     private Integer startYear;
 
-    @Column(name = "EMAIL")
+    @Column(name = "email")
     private String email;
 
-    @Column(name = "PHONE_NUMBER")
+    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "TAX_NUMBER")
+    @Column(name = "tax_number")
     private String taxNumber;
 
-    @Column(name = "FACILITY_NUMBER")
+    @Column(name = "facility_number")
     private String facilityNumber;
 
-    @Column(name = "ELECTRIC_CHARGE_STATION")
+    @Column(name = "electric_charge_station")
     private Boolean electricChargeStation;
 
-    @Column(name = "TOTAL_ROOM_NUMBER")
+    @Column(name = "total_room_number")
     private Integer totalRoomNumber;
 
 //    // Oda sayısı ve kaçar kişilik oldukları algoritması yapılacak

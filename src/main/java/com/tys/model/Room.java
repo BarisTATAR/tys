@@ -9,24 +9,24 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "ROOM")
+@Table(schema = "tys", name = "room")
 public class Room {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "NUMBER")
+    @Column(name = "number")
     private Integer number;            // Odanın numarası
 
-    @Column(name = "FULL")
-    private Boolean full;              // Oda dolu mu? (true: dolu, false: boş)
+    @Column(name = "loaded")
+    private Boolean loaded;              // Oda dolu mu? (true: dolu, false: boş)
 
-    @Column(name = "CAPACITY")
+    @Column(name = "capacity")
     private Integer capacity;          // Odanın kapasitesi (kaç kişi kalabilir?)
 
-    @Column(name = "SEA_VIEW")
+    @Column(name = "sea_view")
     private Boolean seaView;            // Oda deniz manzaralı mı?
 
 //    @ManyToOne
