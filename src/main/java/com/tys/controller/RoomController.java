@@ -1,7 +1,9 @@
 package com.tys.controller;
 
-import com.tys.model.Room;
+import com.tys.request.CreateRoomRequest;
+import com.tys.request.DeleteRoomRequest;
 import com.tys.service.RoomService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,17 +16,18 @@ public class RoomController {
         this.roomService = roomService;
     }
 
+
     @PostMapping
-    public Room createRoom(@RequestBody Room room) {
-    return  roomService.saveRoom(room);
+    public ResponseEntity<Void> saveRoom(@RequestBody CreateRoomRequest request) {
+        roomService.saveRoom(request);
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteRoom(@PathVariable Long id) {
-        roomService.deleteRoom(id);
-
+    @DeleteMapping("/{request}")
+    public ResponseEntity<Void> deleteRoom(@ModelAttribute DeleteRoomRequest request) {
+        roomService.deleteRoom(request);
+        return ResponseEntity.ok().build();
     }
-
 
 
 }

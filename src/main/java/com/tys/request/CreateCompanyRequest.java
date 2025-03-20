@@ -1,5 +1,6 @@
 package com.tys.request;
 
+import com.tys.enums.CompanyCategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateCompanyRequest {
+
     private String name;
     private String address;
-    private String category;
+    private CompanyCategory category;
+    private Integer startYear;
     private String email;
     private String phoneNumber;
     private String taxNumber;

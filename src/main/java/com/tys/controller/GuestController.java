@@ -2,7 +2,12 @@ package com.tys.controller;
 
 
 import com.tys.model.Guest;
+import com.tys.request.CreateCompanyRequest;
+import com.tys.request.CreateGuestRequest;
+import com.tys.request.DeleteCompanyRequest;
+import com.tys.request.DeleteGuestRequest;
 import com.tys.service.GuestService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,14 +21,15 @@ public class GuestController {
     }
 
     @PostMapping
-    public Guest saveGuest(@RequestBody Guest guest){
-
-        return guestService.saveGuest(guest);
+    public ResponseEntity<Void> saveGuest(@RequestBody CreateGuestRequest request) {
+        guestService.saveGuest(request);
+        return ResponseEntity.ok().build();
     }
-    @DeleteMapping("/{id}")
-    public void deleteGuest(@PathVariable Long id) {
-        guestService.deleteGuest(id);
 
+    @DeleteMapping("/{request}")
+    public ResponseEntity<Void> deleteGuest(@ModelAttribute DeleteGuestRequest request) {
+        guestService.deleteGuest(request);
+        return ResponseEntity.ok().build();
     }
 
 }
