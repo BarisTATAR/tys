@@ -4,9 +4,12 @@ import com.tys.model.Company;
 import com.tys.repository.CompanyRepository;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
+import com.tys.request.UpdateCompanyRequest;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CompanyService {
@@ -36,4 +39,19 @@ public class CompanyService {
         companyRepository.deleteById(request.getId());
     }
 
+    public Company getCompanyById(Long id){
+
+        return companyRepository.findById(id).orElseThrow();
+
+    }
+
+    public List<Company> getAllCompanies() {
+
+        return companyRepository.findAll();
+    }
+
+    public Company updateCompany(UpdateCompanyRequest request) {
+        Company company = modelMapper.map(request, Company.class);
+        return companyRepository.save(company);
+    }
 }
