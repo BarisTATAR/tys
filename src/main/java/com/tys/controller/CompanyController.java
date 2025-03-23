@@ -3,9 +3,12 @@ package com.tys.controller;
 import com.tys.model.Company;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
+import com.tys.request.UpdateCompanyRequest;
 import com.tys.service.CompanyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/companies")
@@ -28,16 +31,20 @@ public class CompanyController {
         return ResponseEntity.ok().build();
     }
 
-
-  /*  // GET mapping to retrieve a car by its ID
     @GetMapping("/{id}")
-    public Company getCompany(@PathVariable GetCompanyRequest request) {
-        Company company = companyService.get(request);
-        if (company == null) {
-            throw new ("Company with id " + id + " not found");
-        }
-        return company;
-    }   */
+    public ResponseEntity<Company> getCompanyById(@PathVariable Long id) {
+        return ResponseEntity.ok(companyService.getCompanyById(id));
+    }
 
+    @GetMapping
+    public ResponseEntity <List<Company>> getAllCompanies() {
+        return ResponseEntity.ok(companyService.getAllCompanies());
+    }
+
+    @PutMapping
+    public ResponseEntity<Void> updateCompany(@RequestBody UpdateCompanyRequest request) {
+        companyService.updateCompany(request);
+        return ResponseEntity.ok().build();
+    }
 
 }
