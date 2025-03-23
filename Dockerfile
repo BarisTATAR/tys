@@ -1,5 +1,5 @@
 # Use an official Maven image as the base image
-FROM maven:3.8.4-openjdk-21-slim AS build
+FROM maven:3.9.5-amazoncorretto-21 AS build
 
 # Set the working directory in the container
 WORKDIR /app
@@ -11,8 +11,8 @@ COPY src ./src
 # Build the application using Maven
 RUN mvn clean package -DskipTests
 
-# Java 17 kullanarak bir temel imajdan başla
-FROM openjdk:21
+# Java 21 kullanarak bir temel imajdan başla
+FROM openjdk:21-slim
 
 # Uygulamayı çalıştıracağımız dizini oluştur
 WORKDIR /app
