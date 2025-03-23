@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateCompanyRequest {
-
     private Long id;
     private String name;
     private String address;
@@ -20,5 +19,4 @@ public class UpdateCompanyRequest {
     private String facilityNumber;
     private Boolean electricChargeStation;
     private Integer totalRoomNumber;
-
 }

@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateCompanyRequest {
-
     private String name;
     private String address;
     private CompanyCategory category;

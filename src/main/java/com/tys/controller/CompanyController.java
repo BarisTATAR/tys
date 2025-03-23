@@ -5,28 +5,27 @@ import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.UpdateCompanyRequest;
 import com.tys.service.CompanyService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/companies")
 public class CompanyController {
-    private CompanyService companyService;
 
-    public CompanyController(CompanyService companyService) {
-        this.companyService = companyService;
-    }
+    private final CompanyService companyService;
 
     @PostMapping
     public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {
-        companyService.saveCompany(request);
+        companyService.createCompany(request);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{request}")
-    public ResponseEntity<Void> deleteCompany(@ModelAttribute DeleteCompanyRequest request) {
+    @DeleteMapping
+    public ResponseEntity<Void> deleteCompany(@RequestBody DeleteCompanyRequest request) {
         companyService.deleteCompany(request);
         return ResponseEntity.ok().build();
     }
@@ -37,7 +36,7 @@ public class CompanyController {
     }
 
     @GetMapping
-    public ResponseEntity <List<Company>> getAllCompanies() {
+    public ResponseEntity<List<Company>> getAllCompanies() {
         return ResponseEntity.ok(companyService.getAllCompanies());
     }
 
@@ -46,5 +45,4 @@ public class CompanyController {
         companyService.updateCompany(request);
         return ResponseEntity.ok().build();
     }
-
 }

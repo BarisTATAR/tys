@@ -1,57 +1,46 @@
 package com.tys.service;
 
+import com.tys.mapper.CompanyMapper;
 import com.tys.model.Company;
 import com.tys.repository.CompanyRepository;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.UpdateCompanyRequest;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CompanyService {
 
-    @Autowired
-    private CompanyRepository companyRepository;
+    private final CompanyRepository companyRepository;
+    private final CompanyMapper companyMapper;
 
-    private ModelMapper modelMapper;
-
-    public CompanyService(CompanyRepository companyRepository) {
-        this.companyRepository = companyRepository;
-        this.modelMapper = new ModelMapper();
-    }
-
-    public void saveCompany(CreateCompanyRequest request) {
-        Company company = modelMapper.map(request, Company.class);
+    public void createCompany(CreateCompanyRequest request) {
+        Company company = companyMapper.createCompanyRequestToEntity(request);
         companyRepository.save(company);
     }
 
     public void deleteCompany(DeleteCompanyRequest request) {
-
         if (!companyRepository.existsById(request.getId())) {
-
             throw new RuntimeException("Company not found with Id: " + request.getId());
-
         }
         companyRepository.deleteById(request.getId());
     }
 
-    public Company getCompanyById(Long id){
-
-        return companyRepository.findById(id).orElseThrow();
-
+    public Company getCompanyById(Long id) {
+        return companyRepository.findById(id).orElseThrow(() -> new RuntimeException("Company not found with Id: " + id));
     }
 
     public List<Company> getAllCompanies() {
-
         return companyRepository.findAll();
     }
 
-    public Company updateCompany(UpdateCompanyRequest request) {
-        Company company = modelMapper.map(request, Company.class);
-        return companyRepository.save(company);
+    public void updateCompany(UpdateCompanyRequest request) {
+        Company existingCompany = companyRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Company not found with Id: " + request.getId()));
+        companyMapper.updateExistingCompanyWithCompanyRequest(request, existingCompany);
+        companyRepository.save(existingCompany);
     }
 }
