@@ -1,11 +1,9 @@
 package com.tys.controller;
 
 
-import com.tys.model.Guest;
-import com.tys.request.CreateCompanyRequest;
 import com.tys.request.CreateGuestRequest;
-import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.DeleteGuestRequest;
+import com.tys.request.UpdateGuestRequest;
 import com.tys.service.GuestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,4 +28,9 @@ public class GuestController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping
+    public ResponseEntity<Void> updateGuest(@RequestBody UpdateGuestRequest request) {
+        guestService.updateGuest(request);
+        return ResponseEntity.ok().build();
+    }
 }
