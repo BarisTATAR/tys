@@ -2,6 +2,7 @@ package com.tys.service;
 
 import com.tys.mapper.GuestMapper;
 import com.tys.mapper.RoomMapper;
+import com.tys.model.Company;
 import com.tys.model.Guest;
 import com.tys.model.Room;
 import com.tys.repository.RoomRepository;
@@ -10,6 +11,8 @@ import com.tys.request.DeleteRoomRequest;
 import com.tys.request.UpdateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,14 @@ public class RoomService {
         roomRepository.save(existingRoom);
 
     }
+    public Room getRoomById(Long id) {
+        return roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+    }
+
+    public List<Room> getAllRooms() {
+        return roomRepository.findAll();
+    }
+
 }
 
 
