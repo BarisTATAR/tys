@@ -2,14 +2,16 @@ package com.tys.controller;
 
 
 import com.tys.model.Guest;
-import com.tys.request.CreateCompanyRequest;
+import com.tys.model.Room;
 import com.tys.request.CreateGuestRequest;
-import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.DeleteGuestRequest;
+import com.tys.request.UpdateGuestRequest;
 import com.tys.service.GuestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,4 +32,19 @@ public class GuestController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping
+    public ResponseEntity<Void> updateGuest(@RequestBody UpdateGuestRequest request) {
+        guestService.updateGuest(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Guest> getGuestById(@PathVariable Long id) {
+        return ResponseEntity.ok(guestService.getGuestById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Guest>> getAllGuest() {
+        return ResponseEntity.ok(guestService.getAllGuest());
+    }
 }
