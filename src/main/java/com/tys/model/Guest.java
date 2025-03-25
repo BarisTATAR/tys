@@ -55,7 +55,7 @@ public class Guest {
     @Column(name = "check_out_date")
     private LocalDate checkOutDate;
 
-//    @ManyToOne
-//    @JoinColumn(name="room", nullable=false)
-//    private Room room;
+    @ManyToOne
+    @JoinColumn(name="room", nullable=false)
+    private Room room;
 }
