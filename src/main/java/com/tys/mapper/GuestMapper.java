@@ -11,7 +11,7 @@ public interface GuestMapper {
 
     Guest createGuestRequestToEntity(CreateGuestRequest createGuestRequest);
 
-    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "id", target = "id", ignore = true)
     void updateExistingGuestWithGuestRequest(UpdateGuestRequest updateGuestRequest, @MappingTarget Guest existingGuest);
 
 }

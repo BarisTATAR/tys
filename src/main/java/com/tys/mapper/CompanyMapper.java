@@ -11,7 +11,7 @@ import org.mapstruct.MappingTarget;
 public interface CompanyMapper {
     Company createCompanyRequestToEntity(CreateCompanyRequest createCompanyRequest);
 
-    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "id", target = "id", ignore = true)
     void updateExistingCompanyWithCompanyRequest(UpdateCompanyRequest updateCompanyRequest, @MappingTarget Company existingCompany);
 }
 
