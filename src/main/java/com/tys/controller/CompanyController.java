@@ -13,18 +13,18 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/companies")
+@RequestMapping("/company")
 public class CompanyController {
 
     private final CompanyService companyService;
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {
         companyService.createCompany(request);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteCompany(@RequestBody DeleteCompanyRequest request) {
         companyService.deleteCompany(request);
         return ResponseEntity.ok().build();
@@ -35,12 +35,12 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.getCompanyById(id));
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Company>> getAllCompanies() {
         return ResponseEntity.ok(companyService.getAllCompanies());
     }
 
-    @PutMapping
+    @PutMapping("/update")
     public ResponseEntity<Void> updateCompany(@RequestBody UpdateCompanyRequest request) {
         companyService.updateCompany(request);
         return ResponseEntity.ok().build();

@@ -15,24 +15,24 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/guests")
+@RequestMapping("/guest")
 public class GuestController {
 
     private final GuestService guestService;
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Void> createGuest(@RequestBody CreateGuestRequest request) {
         guestService.createGuest(request);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteGuest(@RequestBody DeleteGuestRequest request) {
         guestService.deleteGuest(request);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping
+    @PutMapping("/update")
     public ResponseEntity<Void> updateGuest(@RequestBody UpdateGuestRequest request) {
         guestService.updateGuest(request);
         return ResponseEntity.ok().build();
@@ -43,7 +43,7 @@ public class GuestController {
         return ResponseEntity.ok(guestService.getGuestById(id));
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Guest>> getAllGuest() {
         return ResponseEntity.ok(guestService.getAllGuest());
     }

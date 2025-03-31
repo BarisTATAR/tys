@@ -12,7 +12,7 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface RoomMapper {
     Room createRoomRequestToEntity(CreateRoomRequest createRoomRequest);
-    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "id", target = "id", ignore = true)
     void updateExistingRoomWithRoomRequest(UpdateRoomRequest updateRoomRequest, @MappingTarget Room existingRoom);
 
 

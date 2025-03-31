@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -48,9 +50,7 @@ public class Company {
     @Column(name = "total_room_number")
     private Integer totalRoomNumber;
 
-//    // Oda sayısı ve kaçar kişilik oldukları algoritması yapılacak
-//    @OneToMany(mappedBy="company")
-//    private List<Room> roomList;
-
+    @OneToMany(mappedBy = "company")
+    private List<Room> roomList;
 }
 

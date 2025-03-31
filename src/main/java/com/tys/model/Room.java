@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -29,8 +31,10 @@ public class Room {
     @Column(name = "sea_view")
     private Boolean seaView;            // Oda deniz manzaralı mı?
 
-//    @ManyToOne
-//    @JoinColumn(name="company", nullable=false)
-//    private Company company;
+    @ManyToOne
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
+    @OneToMany(mappedBy = "room")
+    private List<Guest> guestList;
 }
