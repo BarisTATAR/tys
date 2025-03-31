@@ -8,7 +8,5 @@ public class TysApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(TysApplication.class, args);
-        //SrvShsYtkTmlClient client = new SrvShsYtkTmlClient();
     }
-
 }

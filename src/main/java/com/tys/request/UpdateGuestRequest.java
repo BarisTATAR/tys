@@ -9,7 +9,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateGuestRequest {
-
     private Long id;
     private String name;
     private String surname;
@@ -23,5 +22,4 @@ public class UpdateGuestRequest {
     private LocalDate bookingDate;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
-
 }

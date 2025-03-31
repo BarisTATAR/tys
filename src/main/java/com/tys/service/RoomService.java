@@ -5,6 +5,7 @@ import com.tys.mapper.RoomMapper;
 import com.tys.model.Company;
 import com.tys.model.Guest;
 import com.tys.model.Room;
+import com.tys.repository.CompanyRepository;
 import com.tys.repository.RoomRepository;
 import com.tys.request.CreateRoomRequest;
 import com.tys.request.DeleteRoomRequest;
@@ -13,16 +14,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final CompanyRepository companyRepository;
     private final RoomMapper roomMapper;
 
     public void createRoom(CreateRoomRequest request) {
         Room room = roomMapper.createRoomRequestToEntity(request);
+        Optional<Company> company = companyRepository.findById(request.getCompanyId());
+        if (company.isEmpty()) {
+            throw new RuntimeException("Company not found with Id: " + request.getCompanyId());
+        } else {
+            room.setCompany(company.get());
+        }
         roomRepository.save(room);
     }
 

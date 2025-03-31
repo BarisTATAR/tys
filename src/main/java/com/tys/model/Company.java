@@ -50,9 +50,7 @@ public class Company {
     @Column(name = "total_room_number")
     private Integer totalRoomNumber;
 
-
-        @OneToMany(mappedBy="company", cascade = CascadeType.ALL, orphanRemoval = true)
-        private List<Room> roomList;
-
+    @OneToMany(mappedBy = "company")
+    private List<Room> roomList;
 }
 

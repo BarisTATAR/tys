@@ -35,8 +35,6 @@ public class Room {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "room")
     private List<Guest> guestList;
-
 }
