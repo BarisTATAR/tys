@@ -58,4 +58,14 @@ public class Guest {
     @ManyToOne
     @JoinColumn(name="room", nullable=false)
     private Room room;
+
+    @ManyToOne
+    @JoinColumn(name="reservation", nullable=false)
+    private Reservation reservation;
+
+    @OneToOne
+    @JoinColumn(name="reservationContact", nullable=false)
+    private Reservation reservationContact;
+
+
 }
