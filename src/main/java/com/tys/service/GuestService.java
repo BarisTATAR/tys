@@ -38,7 +38,6 @@ public class GuestService {
 
     public Guest getGuestById(Long id) {
         return guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Company not found with Id: " + id));
-
     }
 
     public List<Guest> getAllGuest() {

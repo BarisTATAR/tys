@@ -1,0 +1,17 @@
+Adding New Reservation
+http://localhost:8080/reservation
+
+{
+ "id" :125
+ "totalGuestNumber" :5,
+ "startDate" :15.04.2025,
+ "endDate" : 20.04.2025,
+ "reservationType" : ODA,
+ "reservationState" CHECK_IN_YAPILDI;
+
+
+
+
+
+
+}

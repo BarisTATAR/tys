@@ -46,6 +46,9 @@ public class Guest {
     @Column(name = "short_stay")
     private Boolean shortStay;
 
+    @Column(name = "is_contact")
+    private Boolean isContact;
+
     @Column(name = "booking_date")
     private LocalDate bookingDate;
 
@@ -56,6 +59,14 @@ public class Guest {
     private LocalDate checkOutDate;
 
     @ManyToOne
-    @JoinColumn(name="room", nullable=false)
+    @JoinColumn(name = "room", nullable = false)
     private Room room;
+
+    @ManyToOne
+    @JoinColumn(name = "reservation", nullable = false)
+    private Reservation reservation;
+
+    @OneToOne
+    @JoinColumn(name = "reservationContact", nullable = false)
+    private Reservation reservationContact;
 }

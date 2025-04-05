@@ -6,7 +6,8 @@ public enum KbsBolgesi {
     POLIS("Polis");
 
     private final String kbsBolgesi;
-    KbsBolgesi (String kbsBolgesi) {
+
+    KbsBolgesi(String kbsBolgesi) {
         this.kbsBolgesi = kbsBolgesi;
     }
 }
