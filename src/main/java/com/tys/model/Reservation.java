@@ -1,12 +1,11 @@
 package com.tys.model;
 
-import com.tys.enums.ReservationState;
+import com.tys.enums.ReservationStatus;
 import com.tys.enums.ReservationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,9 +30,6 @@ public class Reservation {
     @Column(name = "end_date")      //Reservation end date
     private LocalDateTime endDate;
 
-    @OneToOne(mappedBy = "reservationContact")
-    private Guest reservationContact;
-
     @OneToMany(mappedBy = "reservation")
     private List<Guest> guestList;
 
@@ -41,6 +37,6 @@ public class Reservation {
     private ReservationType reservationType;
 
     @Column(name = "reservationState")      //Reservation end date
-    private ReservationState reservationState;
+    private ReservationStatus reservationStatus;
 
 }

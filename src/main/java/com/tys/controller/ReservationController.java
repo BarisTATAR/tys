@@ -1,15 +1,16 @@
 package com.tys.controller;
-import com.tys.model.Company;
+
 import com.tys.model.Reservation;
-import com.tys.model.Room;
-import com.tys.request.*;
+import com.tys.request.CreateReservationRequest;
+import com.tys.request.DeleteReservationRequest;
+import com.tys.request.UpdateReservationRequest;
 import com.tys.service.ReservationService;
-import com.tys.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reservation")
@@ -39,10 +40,9 @@ public class ReservationController {
     public ResponseEntity<Reservation> getReservationById(@PathVariable Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
     }
-    @GetMapping("/alls")
+
+    @GetMapping("/all")
     public ResponseEntity<List<Reservation>> getAllReservations() {
         return ResponseEntity.ok(reservationService.getAllReservations());
     }
-
-
 }

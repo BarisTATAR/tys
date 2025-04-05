@@ -1,4 +1,5 @@
 package com.tys.request;
+
 import com.tys.enums.CompanyCategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;

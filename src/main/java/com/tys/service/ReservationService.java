@@ -1,8 +1,6 @@
 package com.tys.service;
 
-
 import com.tys.mapper.ReservationMapper;
-import com.tys.model.Company;
 import com.tys.model.Reservation;
 import com.tys.repository.ReservationRepository;
 import com.tys.request.CreateReservationRequest;
@@ -22,7 +20,7 @@ public class ReservationService {
 
     public void updateReservation(UpdateReservationRequest request) {
 
-        Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Company not found with Id: " + request.getId()));
+        Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + request.getId()));
         reservationMapper.updateExistingReservationWithReservationRequest(request, existingReservation);
         reservationRepository.save(existingReservation);
     }
@@ -46,5 +44,4 @@ public class ReservationService {
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
-
 }

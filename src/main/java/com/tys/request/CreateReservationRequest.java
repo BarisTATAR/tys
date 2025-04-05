@@ -1,8 +1,7 @@
 package com.tys.request;
 
-import com.tys.enums.ReservationState;
+import com.tys.enums.ReservationStatus;
 import com.tys.enums.ReservationType;
-import com.tys.model.Guest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,9 +17,8 @@ public class CreateReservationRequest {
     private Integer totalGuestNumber;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private Guest reservationContact;
-    private List<Guest> guestList;
+    private List<CreateGuestRequest> guestList;
     private ReservationType reservationType;
-    private ReservationState reservationState;
+    private ReservationStatus reservationState;
 
 }

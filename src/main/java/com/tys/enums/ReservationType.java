@@ -2,9 +2,8 @@ package com.tys.enums;
 
 public enum ReservationType {
 
-
-    ODA_KAHVALTI("ODA KAHVALTI"),
-    ODA("ODA");
+    ROOM_WITH_BREAKFAST("Oda Kahvaltı"),
+    ROOM_ONLY("Oda");
 
     private final String reservationType;
 

@@ -1,6 +1,6 @@
 package com.tys.request;
 
-import com.tys.enums.ReservationState;
+import com.tys.enums.ReservationStatus;
 import com.tys.enums.ReservationType;
 import com.tys.model.Guest;
 import lombok.AllArgsConstructor;
@@ -22,5 +22,5 @@ public class UpdateReservationRequest {
     private Guest reservationContact;
     private List<Guest> guestList;
     private ReservationType reservationType;
-    private ReservationState reservationState;
+    private ReservationStatus reservationStatus;
 }
