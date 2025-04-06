@@ -39,4 +39,7 @@ public class Reservation {
     @Column(name = "reservationState")      //Reservation end date
     private ReservationStatus reservationStatus;
 
+    @OneToMany(mappedBy = "payment")
+    private List<Payment> paymentList;
+
 }
