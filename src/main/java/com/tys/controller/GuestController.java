@@ -1,8 +1,6 @@
 package com.tys.controller;
 
-
 import com.tys.model.Guest;
-import com.tys.model.Room;
 import com.tys.request.CreateGuestRequest;
 import com.tys.request.DeleteGuestRequest;
 import com.tys.request.UpdateGuestRequest;

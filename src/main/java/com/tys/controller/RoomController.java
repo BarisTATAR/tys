@@ -45,6 +45,4 @@ public class RoomController {
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(roomService.getAllRooms());
     }
-
-
 }

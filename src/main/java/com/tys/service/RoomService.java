@@ -1,9 +1,7 @@
 package com.tys.service;
 
-import com.tys.mapper.GuestMapper;
 import com.tys.mapper.RoomMapper;
 import com.tys.model.Company;
-import com.tys.model.Guest;
 import com.tys.model.Room;
 import com.tys.repository.CompanyRepository;
 import com.tys.repository.RoomRepository;
@@ -46,8 +44,8 @@ public class RoomService {
         Room existingRoom = roomRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Room not found with Id: " + request.getId()));
         roomMapper.updateExistingRoomWithRoomRequest(request, existingRoom);
         roomRepository.save(existingRoom);
-
     }
+
     public Room getRoomById(Long id) {
         return roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
     }
@@ -55,7 +53,6 @@ public class RoomService {
     public List<Room> getAllRooms() {
         return roomRepository.findAll();
     }
-
 }
 
 

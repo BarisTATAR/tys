@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,6 +20,7 @@ public class CreateGuestRequest {
     private Integer countryCode;
     private String plateNumber;
     private Boolean shortStay;
+    private Boolean isContact;
     private LocalDate bookingDate;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
