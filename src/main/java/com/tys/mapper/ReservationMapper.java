@@ -11,7 +11,7 @@ import org.mapstruct.MappingTarget;
 public interface ReservationMapper {
     Reservation createReservationRequestToEntity(CreateReservationRequest createReservationRequest);
 
-    @Mapping(source = "id", target = "id", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateExistingReservationWithReservationRequest(UpdateReservationRequest updateReservationRequest, @MappingTarget Reservation existingrReservation);
 }
 
