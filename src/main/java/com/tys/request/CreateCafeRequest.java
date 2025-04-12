@@ -4,14 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateCafeRequest {
-
-    private Long id;
     private String name;
-    private double price;
-
-
+    private BigDecimal price;
 }

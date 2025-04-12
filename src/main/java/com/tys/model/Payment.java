@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -22,15 +23,19 @@ public class Payment {
     private Long id;
 
     @Column(name = "amount")
-    private double amount;
+    private BigDecimal amount;
 
     @Column(name = "advance payment")
-    private double advancePayment;
+    private BigDecimal advancePayment;
 
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
     @Column(name = "payment_type")
     private PaymentType paymentType;
+
+    @ManyToOne
+    @JoinColumn(name = "reservation_id", nullable = false)
+    private Reservation reservation;
 
 }
