@@ -1,6 +1,6 @@
 package com.tys.request;
+
 import com.tys.enums.PaymentType;
-import com.tys.model.Reservation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +18,6 @@ public class UpdatePaymentRequest {
     private BigDecimal advancePayment;
     private LocalDate paymentDate;
     private PaymentType paymentType;
-    private Reservation reservation;
+    private Long reservation_id;
 
 }

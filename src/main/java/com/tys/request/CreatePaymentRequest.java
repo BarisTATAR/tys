@@ -1,8 +1,6 @@
 package com.tys.request;
-import com.tys.enums.CompanyCategory;
+
 import com.tys.enums.PaymentType;
-import com.tys.model.Reservation;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,5 +16,5 @@ public class CreatePaymentRequest {
     private BigDecimal advancePayment;
     private LocalDate paymentDate;
     private PaymentType paymentType;
-    private Reservation reservation;
+    private Long reservation_id;
 }
