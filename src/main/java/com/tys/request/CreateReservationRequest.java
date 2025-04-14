@@ -13,12 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateReservationRequest {
-    private Long id;
     private Integer totalGuestNumber;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private List<CreateGuestRequest> guestList;
     private ReservationType reservationType;
     private ReservationStatus reservationState;
-
 }

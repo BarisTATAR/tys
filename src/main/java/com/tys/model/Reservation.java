@@ -36,7 +36,13 @@ public class Reservation {
     @Column(name = "reservation_type")      //Reservation type
     private ReservationType reservationType;
 
-    @Column(name = "reservationState")      //Reservation end date
+    @Column(name = "reservation_status")      //Reservation end date
     private ReservationStatus reservationStatus;
+
+    @OneToMany(mappedBy = "reservation")
+    private List<Payment> paymentList;
+
+    //@OneToMany(mappedBy = "reservation")
+    //private List<Room> roomList;
 
 }
