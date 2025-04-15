@@ -18,21 +18,21 @@ public class Rating {
     private Long id;
 
     @Column(name = "rating_average")
-    private double ratingAverage;           // Puan (1-5 arası)
+    private Double ratingAverage;           // Puan (1-5 arası)
 
     @Column(name = "cleanliness")
-    private int cleanliness;   // Temizlik değerlendirmesi
+    private Integer cleanliness;   // Temizlik değerlendirmesi
 
     @Column(name = "service")
-    private int service;       // Hizmet değerlendirmesi
+    private Integer service;       // Hizmet değerlendirmesi
 
     @Column(name = "comfort")
-    private int comfort;       // Konfor değerlendirmesi
+    private Integer comfort;       // Konfor değerlendirmesi
 
     @Column(name = "location")
-    private int location;      // Konum değerlendirmesi
+    private Integer location;      // Konum değerlendirmesi
 
     @Column(name = "food")
-    private int food;      // Yiyecek  değerlendirmesi
+    private Integer food;      // Yiyecek  değerlendirmesi
 
 }

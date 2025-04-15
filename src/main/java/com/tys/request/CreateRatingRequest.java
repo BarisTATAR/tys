@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateRatingRequest {
-    private double ratingAverage;
-    private int cleanliness;
-    private int service;
-    private int comfort;
-    private int location;
-    private int food;
+    private Double ratingAverage;
+    private Integer cleanliness;
+    private Integer service;
+    private Integer comfort;
+    private Integer location;
+    private Integer food;
 }
