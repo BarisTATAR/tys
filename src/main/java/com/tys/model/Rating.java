@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -18,7 +20,7 @@ public class Rating {
     private Long id;
 
     @Column(name = "rating_average")
-    private Double ratingAverage;           // Puan (1-5 arası)
+    private BigDecimal ratingAverage;           // Puan (1-5 arası)
 
     @Column(name = "cleanliness")
     private Integer cleanliness;   // Temizlik değerlendirmesi

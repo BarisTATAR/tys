@@ -4,11 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateRatingRequest {
-    private Double ratingAverage;
+    private BigDecimal ratingAverage;
     private Integer cleanliness;
     private Integer service;
     private Integer comfort;
