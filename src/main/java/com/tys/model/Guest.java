@@ -19,6 +19,9 @@ public class Guest {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "tc")
+    private String tc;
+
     @Column(name = "name")
     private String name;
 
