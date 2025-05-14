@@ -19,8 +19,8 @@ public class Guest {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "tc")
-    private String tc;
+    @Column(name = "identityNumber")
+    private String identityNumber;
 
     @Column(name = "name")
     private String name;

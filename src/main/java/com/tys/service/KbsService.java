@@ -2,10 +2,7 @@ package com.tys.service;
 
 import com.tys.client.*;
 import com.tys.mapper.KbsMapper;
-import com.tys.request.KbsGuestCheckInRequest;
-import com.tys.request.KbsGuestCheckOutRequest;
-import com.tys.request.KbsGuestUpdateCheckInRequest;
-import com.tys.request.KbsParameterRequest;
+import com.tys.request.*;
 import com.tys.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +43,37 @@ public class KbsService {
                 }
             }
             return kbsGuestResponseList;
+        } catch (Exception ex) {
+            log.error("Error occured while calling Kbs service, musteriKimlikNoListele : {}", ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public List<KbsForeignGuestResponse> kbsForeignGuestList() {
+        try {
+            List<KbsForeignGuestResponse> kbsForeignGuestResponseList = null;
+            /*((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, 123L);
+            ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "123");*/
+
+            MusteriYabanciListe musteriYabanciListe = port.musteriYabanciListele(11111070495L, 123L, "123");
+            Sonuc musteriYabanciListeleSonuc = musteriYabanciListe.getSonuc().getValue();
+            if (musteriYabanciListeleSonuc.isBasarili()) {
+                kbsForeignGuestResponseList = musteriYabanciListe.getMItems().getValue().getMusteriYabanciGirisSonuc()
+                        .stream()
+                        .map(musteri -> KbsForeignGuestResponse.builder()
+                                .name(musteri.getADI().getValue())
+                                .surname(musteri.getSOYADI().getValue())
+                                .build())
+                        .toList();
+
+            } else {
+                if (Boolean.FALSE.equals(musteriYabanciListeleSonuc.getHataKodu().isEmpty())) {
+                    log.error("musteriYabanciListele throws an error - code : {} , message : {}",
+                            musteriYabanciListeleSonuc.getMesaj().getValue(),
+                            musteriYabanciListeleSonuc.getHataKodu().getFirst());
+                }
+            }
+            return kbsForeignGuestResponseList;
         } catch (Exception ex) {
             log.error("Error occured while calling Kbs service, musteriKimlikNoListele : {}", ex.getMessage());
             throw new RuntimeException(ex);
@@ -139,6 +167,70 @@ public class KbsService {
             return kbsGuestUpdateCheckInResponse;
         } catch (Exception ex) {
             log.error("Error occured while calling Kbs service, musteriKimlikNoGuncelle : {}", ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public KbsForeignGuestCheckInResponse checkInForeignGuest(KbsForeignGuestCheckInRequest request) {
+        try {
+            KbsForeignGuestCheckInResponse kbsForeignGuestCheckInResponse = new KbsForeignGuestCheckInResponse();
+            MusteriYabanciGirisSonuc musteriYabanciGiris = port.musteriYabanciGiris(11111070495L, 123L, "123", request.getMusteri());
+            Sonuc musteriKimlikNoGirisrSonuc = musteriYabanciGiris.getSonuc().getValue();
+
+            if (musteriKimlikNoGirisrSonuc.isBasarili()) {
+                kbsForeignGuestCheckInResponse.setMusteri(musteriYabanciGiris);
+            } else {
+                if (Boolean.FALSE.equals(musteriKimlikNoGirisrSonuc.getHataKodu().isEmpty())) {
+                    log.error("musteriYabanciGiris throws an error - code : {} , message : {}",
+                            musteriKimlikNoGirisrSonuc.getMesaj().getValue(),
+                            musteriKimlikNoGirisrSonuc.getHataKodu().getFirst());
+                }
+            }
+            return kbsForeignGuestCheckInResponse;
+        } catch (Exception ex) {
+            log.error("Error occured while calling Kbs service, musteriYabanciGiris : {}", ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public KbsForeignGuestCheckOutResponse checkOutForeignGuest(KbsForeignGuestCheckOutRequest request) {
+        try {
+            KbsForeignGuestCheckOutResponse kbsForeignGuestCheckOutResponse = new KbsForeignGuestCheckOutResponse();
+            Sonuc sonuc = port.musteriYabanciCikis(11111070495L, 123L, "123", request.getMusteri());
+
+            if (sonuc.isBasarili()) {
+                kbsForeignGuestCheckOutResponse.setSonuc(sonuc);
+            } else {
+                if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
+                    log.error("musteriYabanciCikis throws an error - code : {} , message : {}",
+                            sonuc.getMesaj().getValue(),
+                            sonuc.getHataKodu().getFirst());
+                }
+            }
+            return kbsForeignGuestCheckOutResponse;
+        } catch (Exception ex) {
+            log.error("Error occured while calling Kbs service, musteriYabanciCikis : {}", ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public KbsForeignGuestUpdateCheckInResponse updateForeignCheckInGuest(KbsForeignGuestUpdateCheckInRequest request) {
+        try {
+            KbsForeignGuestUpdateCheckInResponse kbsForeignGuestUpdateCheckInResponse = new KbsForeignGuestUpdateCheckInResponse();
+            Sonuc sonuc = port.musteriYabanciGuncelle(11111070495L, 123L, "123", request.getMusteri());
+
+            if (sonuc.isBasarili()) {
+                kbsForeignGuestUpdateCheckInResponse.setSonuc(sonuc);
+            } else {
+                if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
+                    log.error("musteriYabanciGuncelle throws an error - code : {} , message : {}",
+                            sonuc.getMesaj().getValue(),
+                            sonuc.getHataKodu().getFirst());
+                }
+            }
+            return kbsForeignGuestUpdateCheckInResponse;
+        } catch (Exception ex) {
+            log.error("Error occured while calling Kbs service, musteriYabanciGuncelle : {}", ex.getMessage());
             throw new RuntimeException(ex);
         }
     }

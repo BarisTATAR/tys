@@ -1,9 +1,6 @@
 package com.tys.controller;
 
-import com.tys.request.KbsGuestCheckInRequest;
-import com.tys.request.KbsGuestCheckOutRequest;
-import com.tys.request.KbsGuestUpdateCheckInRequest;
-import com.tys.request.KbsParameterRequest;
+import com.tys.request.*;
 import com.tys.response.*;
 import com.tys.service.KbsService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +19,11 @@ public class KbsController {
     @GetMapping("/guestList")
     public ResponseEntity<List<KbsGuestResponse>> getKbsGuestList() {
         return ResponseEntity.ok(kbsService.kbsGuestList());
+    }
+
+    @GetMapping("/foreignGuestList")
+    public ResponseEntity<List<KbsForeignGuestResponse>> getKbsForeignGuestList() {
+        return ResponseEntity.ok(kbsService.kbsForeignGuestList());
     }
 
     @GetMapping("/parameterList")
@@ -44,4 +46,21 @@ public class KbsController {
     public ResponseEntity<KbsGuestUpdateCheckInResponse> updateCheckInGuest(@ModelAttribute KbsGuestUpdateCheckInRequest request) {
         return ResponseEntity.ok(kbsService.updateCheckInGuest(request));
     }
+
+    @PostMapping("/checkInForeignGuest")
+    public ResponseEntity<KbsForeignGuestCheckInResponse> checkInGuest(@ModelAttribute KbsForeignGuestCheckInRequest request) {
+        return ResponseEntity.ok(kbsService.checkInForeignGuest(request));
+
+    }
+
+    @PostMapping("/checkOutForeignGuest")
+    public ResponseEntity<KbsForeignGuestCheckOutResponse> checkOutGuest(@ModelAttribute KbsForeignGuestCheckOutRequest request) {
+        return ResponseEntity.ok(kbsService.checkOutForeignGuest(request));
+    }
+
+    @PostMapping("/updateForeignCheckInGuest")
+    public ResponseEntity<KbsForeignGuestUpdateCheckInResponse> updateCheckInGuest(@ModelAttribute KbsForeignGuestUpdateCheckInRequest request) {
+        return ResponseEntity.ok(kbsService.updateForeignCheckInGuest(request));
+    }
+
 }

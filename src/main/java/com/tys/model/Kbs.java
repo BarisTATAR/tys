@@ -17,14 +17,14 @@ public class Kbs {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "kln_tc")
-    private String klnTc;   //Company T.C No
+    @Column(name = "identityNumber")
+    private String identityNumber;   //Company T.C No
 
     @Column(name = "company_code")
     private String companyCode;     //Company Code
 
-    @Column(name = "kln_password")
-    private String klnPassword;     //kriptolanacak
+    @Column(name = "password")
+    private String password;     //kriptolanacak
 
     @OneToOne(mappedBy = "company")
     private Company company;

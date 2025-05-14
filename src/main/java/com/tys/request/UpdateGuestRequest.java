@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class UpdateGuestRequest {
     private Long id;
-    private String tc;
+    private String identityNumber;
     private String name;
     private String surname;
     private String phoneNumber;

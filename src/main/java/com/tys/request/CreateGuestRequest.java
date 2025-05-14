@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateGuestRequest {
-    private String tc;
+    private String identityNumber;
     private String name;
     private String surname;
     private String phoneNumber;
