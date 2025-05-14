@@ -52,5 +52,8 @@ public class Company {
 
     @OneToMany(mappedBy = "company")
     private List<Room> roomList;
+
+    @OneToOne(mappedBy = "kbs")
+    private Kbs kbs;
 }
 
