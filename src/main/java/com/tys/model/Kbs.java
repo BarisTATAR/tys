@@ -26,6 +26,7 @@ public class Kbs {
     @Column(name = "password")
     private String password;     //kriptolanacak
 
-    @OneToOne(mappedBy = "company")
+    @OneToOne
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 }

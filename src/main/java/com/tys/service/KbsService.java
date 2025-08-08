@@ -39,7 +39,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(musteriKimlikNoListeleSonuc.getHataKodu().isEmpty())) {
                     log.error("musteriKimlikNoListele throws an error - code : {} , message : {}",
                             musteriKimlikNoListeleSonuc.getMesaj().getValue(),
-                            musteriKimlikNoListeleSonuc.getHataKodu().getFirst());
+                            musteriKimlikNoListeleSonuc.getHataKodu().get(0));
                 }
             }
             return kbsGuestResponseList;
@@ -70,7 +70,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(musteriYabanciListeleSonuc.getHataKodu().isEmpty())) {
                     log.error("musteriYabanciListele throws an error - code : {} , message : {}",
                             musteriYabanciListeleSonuc.getMesaj().getValue(),
-                            musteriYabanciListeleSonuc.getHataKodu().getFirst());
+                            musteriYabanciListeleSonuc.getHataKodu().get(0));
                 }
             }
             return kbsForeignGuestResponseList;
@@ -97,7 +97,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(parametrelerSonuc.getHataKodu().isEmpty())) {
                     log.error("parametreListele throws an error - code : {} , message : {}",
                             parametrelerSonuc.getMesaj().getValue(),
-                            parametrelerSonuc.getHataKodu().getFirst());
+                            parametrelerSonuc.getHataKodu().get(0));
                 }
             }
             return kbsParameterResponse;
@@ -119,7 +119,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(musteriKimlikNoGirisrSonuc.getHataKodu().isEmpty())) {
                     log.error("musteriKimlikNoGiris throws an error - code : {} , message : {}",
                             musteriKimlikNoGirisrSonuc.getMesaj().getValue(),
-                            musteriKimlikNoGirisrSonuc.getHataKodu().getFirst());
+                            musteriKimlikNoGirisrSonuc.getHataKodu().get(0));
                 }
             }
             return kbsGuestCheckInResponse;
@@ -140,7 +140,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
                     log.error("musteriKimlikNoCikis throws an error - code : {} , message : {}",
                             sonuc.getMesaj().getValue(),
-                            sonuc.getHataKodu().getFirst());
+                            sonuc.getHataKodu().get(0));
                 }
             }
             return kbsGuestCheckOutResponse;
@@ -161,7 +161,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
                     log.error("musteriKimlikNoGuncelle throws an error - code : {} , message : {}",
                             sonuc.getMesaj().getValue(),
-                            sonuc.getHataKodu().getFirst());
+                            sonuc.getHataKodu().get(0));
                 }
             }
             return kbsGuestUpdateCheckInResponse;
@@ -183,7 +183,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(musteriKimlikNoGirisrSonuc.getHataKodu().isEmpty())) {
                     log.error("musteriYabanciGiris throws an error - code : {} , message : {}",
                             musteriKimlikNoGirisrSonuc.getMesaj().getValue(),
-                            musteriKimlikNoGirisrSonuc.getHataKodu().getFirst());
+                            musteriKimlikNoGirisrSonuc.getHataKodu().get(0));
                 }
             }
             return kbsForeignGuestCheckInResponse;
@@ -204,7 +204,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
                     log.error("musteriYabanciCikis throws an error - code : {} , message : {}",
                             sonuc.getMesaj().getValue(),
-                            sonuc.getHataKodu().getFirst());
+                            sonuc.getHataKodu().get(0));
                 }
             }
             return kbsForeignGuestCheckOutResponse;
@@ -225,7 +225,7 @@ public class KbsService {
                 if (Boolean.FALSE.equals(sonuc.getHataKodu().isEmpty())) {
                     log.error("musteriYabanciGuncelle throws an error - code : {} , message : {}",
                             sonuc.getMesaj().getValue(),
-                            sonuc.getHataKodu().getFirst());
+                            sonuc.getHataKodu().get(0));
                 }
             }
             return kbsForeignGuestUpdateCheckInResponse;

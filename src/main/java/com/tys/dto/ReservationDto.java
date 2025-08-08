@@ -1,29 +1,24 @@
-package com.tys.request;
+package com.tys.dto;
 
 import com.tys.enums.ReservationStatus;
 import com.tys.enums.ReservationType;
-import com.tys.model.Guest;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class UpdateReservationRequest {
-
+public class ReservationDto {
     private Long id;
     private Integer adultGuestNumber;
     private Integer childGuestNumber;
     private Integer babyGuestNumber;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
-    private Guest reservationContact;
-    private List<Guest> guestList;
     private String reservationMessage;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
+
+    private List<GuestDto> guestList;
+    private List<RoomDto> roomList;
+    private List<PaymentDto> paymentList;
 }

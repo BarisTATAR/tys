@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.RoomDto;
 import com.tys.mapper.RoomMapper;
 import com.tys.model.Company;
 import com.tys.model.Room;
@@ -11,8 +12,10 @@ import com.tys.request.UpdateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,12 +49,23 @@ public class RoomService {
         roomRepository.save(existingRoom);
     }
 
-    public Room getRoomById(Long id) {
-        return roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+    public RoomDto getRoomById(Long id) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+        return roomMapper.toDto(room);
     }
 
-    public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+    public List<RoomDto> getAllRooms() {
+        return roomRepository.findAll().stream()
+                .map(roomMapper::toDto)
+                .toList();
+    }
+
+    // Boş odaları al
+    public List<RoomDto> getAvailableRooms(LocalDateTime checkInDate, LocalDateTime checkOutDate) {
+        return roomRepository.findAvailableRooms(checkInDate, checkOutDate).stream()
+                .map(roomMapper::toDto)
+                .toList();
     }
 }
 

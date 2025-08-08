@@ -1,11 +1,13 @@
 package com.tys.service;
 
+import com.tys.dto.ReservationDto;
 import com.tys.mapper.ReservationMapper;
 import com.tys.model.Reservation;
 import com.tys.repository.ReservationRepository;
 import com.tys.request.CreateReservationRequest;
 import com.tys.request.DeleteReservationRequest;
 import com.tys.request.UpdateReservationRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,7 @@ public class ReservationService {
         reservationMapper.updateExistingReservationWithReservationRequest(request, existingReservation);
         reservationRepository.save(existingReservation);
     }
-
+    @Transactional
     public void createReservation(CreateReservationRequest request) {
         Reservation reservation = reservationMapper.createReservationRequestToEntity(request);
         reservationRepository.save(reservation);
@@ -37,11 +39,18 @@ public class ReservationService {
         reservationRepository.deleteById(request.getId());
     }
 
-    public Reservation getReservationById(Long id) {
-        return reservationRepository.findById(id).orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + id));
+    public ReservationDto getReservationById(Long id) {
+        Reservation reservation = reservationRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + id));
+
+        return reservationMapper.toDto(reservation);
     }
 
-    public List<Reservation> getAllReservations() {
-        return reservationRepository.findAll();
+    public List<ReservationDto> getAllReservations() {
+        return reservationRepository.findAll().stream()
+                .map(reservationMapper::toDto)
+                .toList();
     }
+
 }

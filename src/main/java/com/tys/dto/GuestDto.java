@@ -1,20 +1,13 @@
-package com.tys.request;
+package com.tys.dto;
 
-
-import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class CreateGuestRequest {
+public class GuestDto {
+    private Long id;
     private String identityNumber;
-    @NotEmpty(message = "Misafir adı boş olamaz!")
     private String name;
     private String surname;
     private String phoneNumber;
@@ -25,10 +18,11 @@ public class CreateGuestRequest {
     private String plateNumber;
     private Boolean shortStay;
     private Boolean isContact;
-    private LocalDateTime bookingDate;
-    private LocalDateTime checkInDate;
-    private LocalDateTime checkOutDate;
+    private LocalDate bookingDate;
+    private LocalDate checkInDate;
+    private LocalDate checkOutDate;
+
     private Long roomId;
     private Long reservationId;
-
+    private Long reservationContactId;
 }

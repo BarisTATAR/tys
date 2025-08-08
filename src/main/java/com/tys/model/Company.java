@@ -53,7 +53,10 @@ public class Company {
     @OneToMany(mappedBy = "company")
     private List<Room> roomList;
 
-    @OneToOne(mappedBy = "kbs")
+    @OneToMany(mappedBy = "company")
+    private List<Reservation> reservations;
+
+    @OneToOne(mappedBy = "company")
     private Kbs kbs;
 }
 

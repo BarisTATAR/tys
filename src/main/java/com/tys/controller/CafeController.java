@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/cafe")
+@CrossOrigin(origins = "http://localhost:3000")
 public class CafeController {
     private final CafeService cafeService;
     @PostMapping("/create")

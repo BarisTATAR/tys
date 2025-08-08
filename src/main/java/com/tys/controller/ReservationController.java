@@ -1,12 +1,15 @@
 package com.tys.controller;
 
+import com.tys.dto.ReservationDto;
 import com.tys.model.Reservation;
 import com.tys.request.CreateReservationRequest;
 import com.tys.request.DeleteReservationRequest;
 import com.tys.request.UpdateReservationRequest;
 import com.tys.service.ReservationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,12 +17,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reservation")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ReservationController {
 
     private final ReservationService reservationService;
 
     @PostMapping("/create")
-    public ResponseEntity<Void> createReservation(@RequestBody CreateReservationRequest request) {
+    public ResponseEntity<Void> createReservation(@Valid @RequestBody CreateReservationRequest request) {
         reservationService.createReservation(request);
         return ResponseEntity.ok().build();
     }
@@ -37,12 +41,13 @@ public class ReservationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Reservation> getReservationById(@PathVariable Long id) {
+    public ResponseEntity<ReservationDto> getReservationById(@PathVariable Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<Reservation>> getAllReservations() {
+    public ResponseEntity<List<ReservationDto>> getAllReservations() {
         return ResponseEntity.ok(reservationService.getAllReservations());
     }
+
 }

@@ -14,11 +14,11 @@ import org.springframework.stereotype.Service;
 public class CafeService {
 
     private final CafeRepository cafeRepository;
-    private final CafeMapper cafeMapper;
+    //private final CafeMapper cafeMapper;
 
     public void createCafe(CreateCafeRequest request) {
-        Cafe cafe = cafeMapper.createCafeRequestToEntity(request);
-        cafeRepository.save(cafe);
+        /*Cafe cafe = cafeMapper.createCafeRequestToEntity(request);
+        cafeRepository.save(cafe);*/
     }
 
     public void deleteCafe(DeleteCafeRequest request) {
@@ -29,9 +29,9 @@ public class CafeService {
     }
 
     public void updateCafe(UpdateCafeRequest request) {
-        Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
+        /*Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
         cafeMapper.updateExistingCafeWithCafeRequest(request, existingCafe);
-        cafeRepository.save(existingCafe);
+        cafeRepository.save(existingCafe);*/
     }
 
     public Cafe getCafeById(Long id) {

@@ -1,11 +1,15 @@
 package com.tys.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -53,23 +57,26 @@ public class Guest {
     private Boolean isContact;
 
     @Column(name = "booking_date")
-    private LocalDate bookingDate;
+    private LocalDateTime bookingDate;
 
     @Column(name = "check_in_date")
-    private LocalDate checkInDate;
+    private LocalDateTime checkInDate;
 
     @Column(name = "check_out_date")
-    private LocalDate checkOutDate;
+    private LocalDateTime checkOutDate;
 
-    @ManyToOne
-    @JoinColumn(name = "room", nullable = false)
-    private Room room;
+    @ManyToMany(mappedBy = "guests")
+    private List<Reservation> reservations = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "reservation", nullable = false)
-    private Reservation reservation;
+//    @ManyToOne
+//    @JoinColumn(name = "room_id", nullable = false)
+//    private Room room;
 
-    @OneToOne
-    @JoinColumn(name = "reservationContact", nullable = false)
-    private Reservation reservationContact;
+//    @ManyToOne
+//    @JoinColumn(name = "reservation_id", nullable = false)
+//    private Reservation reservation;
+
+//    @OneToOne
+//    @JoinColumn(name = "reservationContact", nullable = false)
+//    private Reservation reservationContact;
 }

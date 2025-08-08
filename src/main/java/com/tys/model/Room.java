@@ -1,5 +1,6 @@
 package com.tys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,10 +32,17 @@ public class Room {
     @Column(name = "sea_view")
     private Boolean seaView;            // Oda deniz manzaralı mı?
 
-    @ManyToOne
-    @JoinColumn(name = "company_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
     private Company company;
 
-    @OneToMany(mappedBy = "room")
-    private List<Guest> guestList;
+    @ManyToMany(mappedBy = "rooms") // Burada 'rooms' ile eşleşmeli
+    private List<Reservation> reservations;  // Relationship with Reservation
+
+//    @OneToMany(mappedBy = "room")
+//    private List<Guest> guestList;
+
+//    @ManyToOne
+//    @JoinColumn(name = "reservation_id")
+//    private Reservation reservation;
 }

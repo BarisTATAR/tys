@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.GuestDto;
 import com.tys.mapper.GuestMapper;
 import com.tys.model.Guest;
 import com.tys.repository.GuestRepository;
@@ -7,6 +8,7 @@ import com.tys.request.CreateGuestRequest;
 import com.tys.request.DeleteGuestRequest;
 import com.tys.request.UpdateGuestRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,12 +38,15 @@ public class GuestService {
         guestRepository.save(existingGuest);
     }
 
-    public Guest getGuestById(Long id) {
-        return guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Company not found with Id: " + id));
-    }
+    public GuestDto getGuestById(Long id) {
+        Guest guest = guestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Guest not found with Id: " + id));
+        return guestMapper.toDto(guest);    }
 
-    public List<Guest> getAllGuest() {
-        return guestRepository.findAll();
-    }
+    public List<GuestDto> getAllGuest() {
+        return guestRepository.findAll()
+                .stream()
+                .map(guestMapper::toDto)
+                .toList();    }
 
 }

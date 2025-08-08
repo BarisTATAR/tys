@@ -1,5 +1,6 @@
 package com.tys.controller;
 
+import com.tys.dto.GuestDto;
 import com.tys.model.Guest;
 import com.tys.request.CreateGuestRequest;
 import com.tys.request.DeleteGuestRequest;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/guest")
+@CrossOrigin(origins = "http://localhost:3000")
 public class GuestController {
 
     private final GuestService guestService;
@@ -37,12 +39,12 @@ public class GuestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Guest> getGuestById(@PathVariable Long id) {
+    public ResponseEntity<GuestDto> getGuestById(@PathVariable Long id) {
         return ResponseEntity.ok(guestService.getGuestById(id));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<Guest>> getAllGuest() {
+    public ResponseEntity<List<GuestDto>> getAllGuest() {
         return ResponseEntity.ok(guestService.getAllGuest());
     }
 }

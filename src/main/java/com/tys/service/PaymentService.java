@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.PaymentDto;
 import com.tys.mapper.PaymentMapper;
 import com.tys.model.Payment;
 import com.tys.repository.PaymentRepository;
@@ -26,7 +27,8 @@ public class PaymentService {
         paymentRepository.save(existingPayment);
     }
 
-    public Payment getPaymentById(Long id) {
-        return paymentRepository.findById(id).orElseThrow(() -> new RuntimeException("Payment not found with Id: " + id));
-    }
+    public PaymentDto getPaymentById(Long id) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Payment not found with Id: " + id));
+        return paymentMapper.toDto(payment);    }
 }
