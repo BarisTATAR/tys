@@ -20,6 +20,12 @@ public class Company {
     @Column(name = "id")
     private Long id;
 
+    @Column(unique = true, nullable = false)      //işletme sahibine verilecek kullanıcı adı
+    private String username;
+
+    @Column(nullable = false)      //işletme sahibine verilecek şifre
+    private String password;
+
     @Column(name = "name")
     private String name;
 

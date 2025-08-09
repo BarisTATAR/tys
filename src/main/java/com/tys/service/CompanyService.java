@@ -5,11 +5,14 @@ import com.tys.model.Company;
 import com.tys.repository.CompanyRepository;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
+import com.tys.request.LoginRequest;
 import com.tys.request.UpdateCompanyRequest;
+import com.tys.response.LoginResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,4 +46,22 @@ public class CompanyService {
         companyMapper.updateExistingCompanyWithCompanyRequest(request, existingCompany);
         companyRepository.save(existingCompany);
     }
+
+    public LoginResponse login(LoginRequest request) {
+
+        Optional<Company> optionalCompany = companyRepository.findByUsername(request.getUsername());
+
+        if (optionalCompany.isEmpty()) {
+            return new LoginResponse(false, "Kullanıcı bulunamadı.");
+        }
+
+        Company company = optionalCompany.get();
+
+        if (!company.getPassword().equals(request.getPassword())) {
+            return new LoginResponse(false, "Şifre hatalı.");
+        }
+
+        return new LoginResponse(true, "Giriş başarılı.");
+    }
+
 }

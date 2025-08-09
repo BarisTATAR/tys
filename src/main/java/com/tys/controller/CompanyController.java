@@ -3,7 +3,9 @@ package com.tys.controller;
 import com.tys.model.Company;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
+import com.tys.request.LoginRequest;
 import com.tys.request.UpdateCompanyRequest;
+import com.tys.response.LoginResponse;
 import com.tys.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,12 @@ import java.util.List;
 public class CompanyController {
 
     private final CompanyService companyService;
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse response = companyService.login(request);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/create")
     public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {

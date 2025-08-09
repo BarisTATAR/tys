@@ -21,9 +21,7 @@ public class UpdateReservationRequest {
     private Integer babyGuestNumber;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
-    private Guest reservationContact;
     private List<Guest> guestList;
-    private String reservationMessage;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
 }
