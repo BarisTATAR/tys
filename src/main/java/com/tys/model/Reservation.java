@@ -24,10 +24,13 @@ public class Reservation {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "reservation_date")    //Reservation date
+    private LocalDateTime reservationDate;
+
     @Column(name = "adult_guest_number")   // Total guest number
     private Integer adultGuestNumber;
 
-    @Column(name = "chil_guest_number")   // Total guest number
+    @Column(name = "child_guest_number")   // Total guest number
     private Integer childGuestNumber;
 
     @Column(name = "baby_guest_number")   // Total guest number
@@ -55,14 +58,16 @@ public class Reservation {
     @ManyToMany
     @JoinTable(
             name = "reservation_room",
+            schema = "tys",
             joinColumns = @JoinColumn(name = "reservation_id"),
             inverseJoinColumns = @JoinColumn(name = "room_id")
     )
-    private List<Room> rooms; // 'rooms' burada olmalı, 'reservationList' değil
+    private List<Room> rooms;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "reservation_guest",
+            schema = "tys",
             joinColumns = @JoinColumn(name = "reservation_id"),
             inverseJoinColumns = @JoinColumn(name = "guest_id")
     )
@@ -71,13 +76,6 @@ public class Reservation {
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
     private List<Payment> paymentList;
 
-//    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
-//    private List<Guest> guestList;
-
-    //    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
-//    private List<Room> roomList;
-
-//    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
-//    private List<Guest> guests;
-
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReservationCafeItem> cafeItems = new ArrayList<>();
 }

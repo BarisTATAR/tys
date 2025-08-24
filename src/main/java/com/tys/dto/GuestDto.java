@@ -1,5 +1,7 @@
 package com.tys.dto;
 
+import com.tys.client.SnfEnumKonaklayanKullanimSekli;
+import com.tys.client.SnfEnumUlkeler;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -14,14 +16,14 @@ public class GuestDto {
     private String email;
     private String job;
     private String address;
-    private Integer countryCode;
+    private SnfEnumUlkeler countryCode;
+    private SnfEnumKonaklayanKullanimSekli guestUsageType;
     private String plateNumber;
     private Boolean shortStay;
     private Boolean isContact;
     private LocalDate bookingDate;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
-
     private Long roomId;
     private Long reservationId;
     private Long reservationContactId;

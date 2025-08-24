@@ -56,7 +56,7 @@ public class RoomService {
     }
 
     public List<RoomDto> getAllRooms() {
-        return roomRepository.findAll().stream()
+        return roomRepository.findAllWithReservations().stream()
                 .map(roomMapper::toDto)
                 .toList();
     }

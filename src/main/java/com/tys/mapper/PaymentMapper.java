@@ -12,8 +12,7 @@ import org.mapstruct.*;
 public interface PaymentMapper {
     Payment createPaymentRequestToEntity(CreatePaymentRequest createPaymentRequest);
 
-    //@Mapping(target = "id", ignore = true)
     void updateExistingPaymentWithPaymentRequest(UpdatePaymentRequest updatePaymentRequest, @MappingTarget Payment existingPayment);
-    //@Mapping(source = "reservation.id", target = "reservationId")
+
     PaymentDto toDto(Payment payment);
 }

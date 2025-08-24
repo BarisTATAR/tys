@@ -32,10 +32,14 @@ public class Room {
     @Column(name = "sea_view")
     private Boolean seaView;            // Oda deniz manzaralı mı?
 
+    @Column(name = "floor")
+    private Integer floor;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "rooms") // Burada 'rooms' ile eşleşmeli
     private List<Reservation> reservations;  // Relationship with Reservation
 

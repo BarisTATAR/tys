@@ -1,5 +1,7 @@
 package com.tys.model;
 
+import com.tys.client.SnfEnumKonaklayanKullanimSekli;
+import com.tys.client.SnfEnumUlkeler;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -45,7 +47,10 @@ public class Guest {
     private String address;
 
     @Column(name = "country_code")
-    private Integer countryCode;
+    private SnfEnumUlkeler countryCode;
+
+    @Column(name = "guest_usage_type")
+    private SnfEnumKonaklayanKullanimSekli guestUsageType;
 
     @Column(name = "plate_number")
     private String plateNumber;
@@ -56,9 +61,6 @@ public class Guest {
     @Column(name = "is_contact")
     private Boolean isContact;
 
-    @Column(name = "booking_date")
-    private LocalDateTime bookingDate;
-
     @Column(name = "check_in_date")
     private LocalDateTime checkInDate;
 
@@ -67,16 +69,4 @@ public class Guest {
 
     @ManyToMany(mappedBy = "guests")
     private List<Reservation> reservations = new ArrayList<>();
-
-//    @ManyToOne
-//    @JoinColumn(name = "room_id", nullable = false)
-//    private Room room;
-
-//    @ManyToOne
-//    @JoinColumn(name = "reservation_id", nullable = false)
-//    private Reservation reservation;
-
-//    @OneToOne
-//    @JoinColumn(name = "reservationContact", nullable = false)
-//    private Reservation reservationContact;
 }

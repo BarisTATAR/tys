@@ -50,7 +50,6 @@ def wsdlUrl = 'https://vatandas.jandarma.gov.tr/KBS_Tesis_Servis/SrvShsYtkTml.sv
 def outputDir = "build/generated-sources/wsdl2java"
 def packageName = 'com.tys.client'
 
-
 task wsdl2java(type: JavaExec) {
     group = 'wsdl'
     description = 'Generates Java code from WSDL via Apache CXF'

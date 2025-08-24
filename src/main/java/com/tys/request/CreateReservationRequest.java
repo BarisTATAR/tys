@@ -29,4 +29,5 @@ public class CreateReservationRequest {
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
     private Company company;
+    private LocalDateTime reservationDate;
 }

@@ -1,5 +1,7 @@
 package com.tys.controller;
 
+import com.tys.dto.CafeDto;
+import com.tys.dto.GuestDto;
 import com.tys.model.Cafe;
 import com.tys.model.Guest;
 import com.tys.request.*;
@@ -7,6 +9,8 @@ import com.tys.service.CafeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,6 +39,11 @@ public class CafeController {
     @GetMapping("/{id}")
     public ResponseEntity<Cafe> getCafeById(@PathVariable Long id) {
         return ResponseEntity.ok(cafeService.getCafeById(id));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<CafeDto>> getAllCafeItems() {
+        return ResponseEntity.ok(cafeService.getAllCafeItems());
     }
 
 

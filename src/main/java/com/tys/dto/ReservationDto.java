@@ -17,6 +17,7 @@ public class ReservationDto {
     private String reservationMessage;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
+    private LocalDateTime reservationDate;
 
     private List<GuestDto> guestList;
     private List<RoomDto> roomList;

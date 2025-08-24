@@ -38,15 +38,15 @@ public class GuestService {
         guestRepository.save(existingGuest);
     }
 
-    public GuestDto getGuestById(Long id) {
-        Guest guest = guestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Guest not found with Id: " + id));
-        return guestMapper.toDto(guest);    }
-
     public List<GuestDto> getAllGuest() {
         return guestRepository.findAll()
                 .stream()
                 .map(guestMapper::toDto)
                 .toList();    }
 
+    public GuestDto getGuestByIdentityNumber(String identityNumber) {
+        Guest guest = guestRepository.findByIdentityNumber(identityNumber)
+                .orElseThrow(() -> new RuntimeException("Guest not found with IdentityNumber: " + identityNumber));
+        return guestMapper.toDto(guest);
+    }
 }

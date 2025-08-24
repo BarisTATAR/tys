@@ -9,11 +9,16 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 
+import java.util.List;
+
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface GuestMapper {
     Guest createGuestRequestToEntity(CreateGuestRequest createGuestRequest);
 
     void updateExistingGuestWithGuestRequest(UpdateGuestRequest updateGuestRequest, @MappingTarget Guest existingGuest);
-    Guest toEntity(GuestDto dto);
+
     GuestDto toDto(Guest guest);
+
+    List<Guest> toEntityList(List<CreateGuestRequest> dtoList);
+
 }

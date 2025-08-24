@@ -13,4 +13,6 @@ public class UpdateRoomRequest {
     private Boolean loaded;
     private Integer capacity;
     private Boolean seaView;
+    private Integer floor;
+
 }

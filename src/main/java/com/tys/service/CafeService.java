@@ -1,5 +1,7 @@
 package com.tys.service;
 
+import com.tys.dto.CafeDto;
+import com.tys.dto.GuestDto;
 import com.tys.mapper.CafeMapper;
 import com.tys.model.Cafe;
 import com.tys.repository.CafeRepository;
@@ -9,16 +11,18 @@ import com.tys.request.UpdateCafeRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CafeService {
 
     private final CafeRepository cafeRepository;
-    //private final CafeMapper cafeMapper;
+    private final CafeMapper cafeMapper;
 
     public void createCafe(CreateCafeRequest request) {
-        /*Cafe cafe = cafeMapper.createCafeRequestToEntity(request);
-        cafeRepository.save(cafe);*/
+        Cafe cafe = cafeMapper.createCafeRequestToEntity(request);
+        cafeRepository.save(cafe);
     }
 
     public void deleteCafe(DeleteCafeRequest request) {
@@ -37,5 +41,11 @@ public class CafeService {
     public Cafe getCafeById(Long id) {
         return cafeRepository.findById(id).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + id));
     }
+
+    public List<CafeDto> getAllCafeItems() {
+        return cafeRepository.findAll()
+                .stream()
+                .map(cafeMapper::toDto)
+                .toList();    }
 
 }

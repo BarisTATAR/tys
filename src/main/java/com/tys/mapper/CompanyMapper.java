@@ -8,8 +8,6 @@ import org.mapstruct.*;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CompanyMapper {
     Company createCompanyRequestToEntity(CreateCompanyRequest createCompanyRequest);
-
-    //@Mapping(source = "id", target = "id", ignore = true)
     void updateExistingCompanyWithCompanyRequest(UpdateCompanyRequest updateCompanyRequest, @MappingTarget Company existingCompany);
 }
 

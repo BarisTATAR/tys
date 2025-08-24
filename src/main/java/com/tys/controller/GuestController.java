@@ -38,9 +38,9 @@ public class GuestController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<GuestDto> getGuestById(@PathVariable Long id) {
-        return ResponseEntity.ok(guestService.getGuestById(id));
+    @GetMapping("/{identityNumber}")
+    public ResponseEntity<GuestDto> getGuestByIdentityNumber(@PathVariable("identityNumber") String identityNumber) {
+        return ResponseEntity.ok(guestService.getGuestByIdentityNumber(identityNumber));
     }
 
     @GetMapping("/all")

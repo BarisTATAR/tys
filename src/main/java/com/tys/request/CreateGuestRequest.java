@@ -1,6 +1,8 @@
 package com.tys.request;
 
 
+import com.tys.client.SnfEnumKonaklayanKullanimSekli;
+import com.tys.client.SnfEnumUlkeler;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +23,8 @@ public class CreateGuestRequest {
     private String email;
     private String job;
     private String address;
-    private Integer countryCode;
+    private SnfEnumUlkeler countryCode;
+    private SnfEnumKonaklayanKullanimSekli guestUsageType;
     private String plateNumber;
     private Boolean shortStay;
     private Boolean isContact;
