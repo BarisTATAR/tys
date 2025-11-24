@@ -1,18 +1,18 @@
 package com.tys.controller;
 
 import com.tys.dto.ReservationDto;
-import com.tys.model.Reservation;
 import com.tys.request.CreateReservationRequest;
 import com.tys.request.DeleteReservationRequest;
+import com.tys.request.CreatePaidAmountRequest;
 import com.tys.request.UpdateReservationRequest;
 import com.tys.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,9 +29,16 @@ public class ReservationController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<Void> updateReservation(@RequestBody UpdateReservationRequest request) {
-        reservationService.updateReservation(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, String>> updateReservation(@RequestBody UpdateReservationRequest request) {
+        try {
+            reservationService.updateReservation(request);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException ex) {
+            // Business rule hatasını yakala ve mesaj olarak döndür
+            return ResponseEntity
+                    .badRequest() // 400 Bad Request
+                    .body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @DeleteMapping("/delete")
@@ -41,13 +48,22 @@ public class ReservationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReservationDto> getReservationById(@PathVariable Long id) {
+    public ResponseEntity<ReservationDto> getReservationByIdd(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<ReservationDto>> getAllReservations() {
         return ResponseEntity.ok(reservationService.getAllWithGuests());
+    }
+
+    @PostMapping("/{id}/payments")
+    public ResponseEntity<?> addPayment(
+            @PathVariable("id") Long id,
+            @RequestBody CreatePaidAmountRequest request
+    ) {
+        reservationService.addPayment(id, request);
+        return ResponseEntity.ok().build();
     }
 
 }

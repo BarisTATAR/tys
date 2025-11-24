@@ -3,6 +3,7 @@ package com.tys.request;
 import com.tys.enums.ReservationStatus;
 import com.tys.enums.ReservationType;
 import com.tys.model.Guest;
+import com.tys.model.Payment;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,8 @@ public class UpdateReservationRequest {
     private Integer babyGuestNumber;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
-    private List<Guest> guestList;
+    private List<Guest> guests;
+    private List<Payment> paymentList;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
 }

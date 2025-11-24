@@ -9,6 +9,9 @@ import com.tys.request.UpdatePaymentRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -27,8 +30,24 @@ public class PaymentService {
         paymentRepository.save(existingPayment);
     }
 
-    public PaymentDto getPaymentById(Long id) {
-        Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment not found with Id: " + id));
-        return paymentMapper.toDto(payment);    }
+    public PaymentDto getPaymentByReservationId(Long id) {
+        List<Payment> payments = paymentRepository.findAllByReservationId(id);
+        Payment payment = new Payment();
+
+        if (payments.isEmpty()) {
+            throw new RuntimeException("No payments found for reservationId: " + id);
+        } else {
+            payment.setAmount(payments.get(0).getAmount());
+            payment.setAdvancePayment(payments.get(0).getAdvancePayment());
+            BigDecimal paidAmount = payments.get(0).getAdvancePayment();
+            for (Payment p : payments) {
+                if (p.getPaidAmount() != null) {
+                    paidAmount = paidAmount.add(p.getPaidAmount());
+                }
+            }
+            payment.setPaidAmount(paidAmount);
+        }
+
+        return paymentMapper.toDto(payment);
+    }
 }

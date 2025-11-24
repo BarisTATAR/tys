@@ -11,6 +11,8 @@ public class PaymentDto {
     private BigDecimal amount;
     private BigDecimal advancePayment;
     private LocalDate paymentDate;
-    private PaymentType paymentType;
+    private PaymentType advancePaymentType;
+    private PaymentType closePaymentType;
+    private BigDecimal paidAmount;
     private Long reservationId;
 }

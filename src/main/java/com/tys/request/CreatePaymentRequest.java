@@ -15,6 +15,7 @@ public class CreatePaymentRequest {
     private BigDecimal amount;
     private BigDecimal advancePayment;
     private LocalDate paymentDate;
-    private PaymentType paymentType;
+    private PaymentType advancePaymentType;
+    private PaymentType closePaymentType;
     private Long reservationId;
 }

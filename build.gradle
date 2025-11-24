@@ -44,6 +44,9 @@ dependencies {
     cxfCodegen 'org.apache.cxf:cxf-tools-common:4.1.2'
     cxfCodegen 'org.apache.cxf.xjc-utils:cxf-xjc-runtime:4.1.0'
     cxfCodegen 'org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb:4.1.2'
+
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
 }
 
 def wsdlUrl = 'https://vatandas.jandarma.gov.tr/KBS_Tesis_Servis/SrvShsYtkTml.svc?wsdl'

@@ -11,14 +11,8 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdatePaymentRequest {
-
-    private Long id;
-    private BigDecimal amount;
-    private BigDecimal advancePayment;
+public class CreatePaidAmountRequest {
     private LocalDate paymentDate;
-    private PaymentType advancePaymentType;
+    private BigDecimal paidAmount;
     private PaymentType closePaymentType;
-    private Long reservationId;
-
 }
