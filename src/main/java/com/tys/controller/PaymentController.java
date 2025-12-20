@@ -2,6 +2,7 @@ package com.tys.controller;
 
 
 import com.tys.dto.PaymentDto;
+import com.tys.enums.PaymentType;
 import com.tys.model.Guest;
 import com.tys.model.Payment;
 import com.tys.request.CreatePaymentRequest;
@@ -10,6 +11,10 @@ import com.tys.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 
 @RestController
@@ -37,5 +42,8 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentByReservationId(id));
     }
 
-
+    @GetMapping
+    public BigDecimal getPayments(@RequestParam(name = "startDate") LocalDate startDate, @RequestParam(name = "endDate") LocalDate endDate, @RequestParam(name = "paymentType") PaymentType paymentType) {
+        return paymentService.getPayments(startDate, endDate, paymentType);
+    }
 }

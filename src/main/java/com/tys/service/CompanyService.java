@@ -47,7 +47,7 @@ public class CompanyService {
         companyRepository.save(existingCompany);
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, Boolean isAdmin) {
 
         Optional<Company> optionalCompany = companyRepository.findByUsername(request.getUsername());
 
@@ -57,9 +57,16 @@ public class CompanyService {
 
         Company company = optionalCompany.get();
 
-        if (!company.getPassword().equals(request.getPassword())) {
-            return new LoginResponse(false, "Şifre hatalı.");
+        if(!isAdmin) {
+            if (!company.getPassword().equals(request.getPassword())) {
+                return new LoginResponse(false, "Şifre hatalı.");
+            }
+        } else {
+            if (!company.getAdminPassword().equals(request.getPassword())) {
+                return new LoginResponse(false, "Şifre hatalı.");
+            }
         }
+
 
         return new LoginResponse(true, "Giriş başarılı.");
     }

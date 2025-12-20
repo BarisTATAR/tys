@@ -23,9 +23,16 @@ public class CompanyController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse response = companyService.login(request);
+        LoginResponse response = companyService.login(request, false);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/admin_login")
+    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest request) {
+        LoginResponse response = companyService.login(request, true);
+        return ResponseEntity.ok(response);
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {

@@ -5,7 +5,6 @@ import com.tys.model.Room;
 import com.tys.request.CreateRoomRequest;
 import com.tys.request.UpdateRoomRequest;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 

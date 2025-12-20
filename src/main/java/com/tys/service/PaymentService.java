@@ -1,6 +1,7 @@
 package com.tys.service;
 
 import com.tys.dto.PaymentDto;
+import com.tys.enums.PaymentType;
 import com.tys.mapper.PaymentMapper;
 import com.tys.model.Payment;
 import com.tys.repository.PaymentRepository;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -49,5 +51,17 @@ public class PaymentService {
         }
 
         return paymentMapper.toDto(payment);
+    }
+
+    public BigDecimal getPayments(LocalDate startDate, LocalDate endDate, PaymentType paymentType) {
+        List<Payment> payments;
+
+        if (paymentType == PaymentType.ALL) {
+            payments = paymentRepository.findByDateRange(startDate, endDate);
+        } else {
+            payments = paymentRepository.findByDateRangeAndPaymentType(startDate, endDate, paymentType);
+        }
+
+        return paymentMapper.calculateTotalAmount(payments);
     }
 }
