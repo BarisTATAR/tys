@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.CompanyDto;
 import com.tys.mapper.CompanyMapper;
 import com.tys.model.Company;
 import com.tys.repository.CompanyRepository;
@@ -20,6 +21,7 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
+    private final TokenService tokenService;
 
     public void createCompany(CreateCompanyRequest request) {
         Company company = companyMapper.createCompanyRequestToEntity(request);
@@ -37,8 +39,14 @@ public class CompanyService {
         return companyRepository.findById(id).orElseThrow(() -> new RuntimeException("Company not found with Id: " + id));
     }
 
-    public List<Company> getAllCompanies() {
-        return companyRepository.findAll();
+    public List<CompanyDto> getAllCompanies() {
+        return companyRepository.findAll().stream()
+                .map(companyMapper::toDto)
+                .toList();
+    }
+
+    public List<String> getCompanyNames() {
+        return companyRepository.findAllCompanyNames();
     }
 
     public void updateCompany(UpdateCompanyRequest request) {
@@ -48,27 +56,33 @@ public class CompanyService {
     }
 
     public LoginResponse login(LoginRequest request, Boolean isAdmin) {
+        // Güvenlik için kullanıcı adı veya şifre hatalı mesajı kullan
+        String errorMessage = "Kullanıcı adı veya şifre hatalı.";
 
         Optional<Company> optionalCompany = companyRepository.findByUsername(request.getUsername());
 
         if (optionalCompany.isEmpty()) {
-            return new LoginResponse(false, "Kullanıcı bulunamadı.");
+            return new LoginResponse(false, errorMessage, null);
         }
 
         Company company = optionalCompany.get();
 
         if(!isAdmin) {
-            if (!company.getPassword().equals(request.getPassword())) {
-                return new LoginResponse(false, "Şifre hatalı.");
+            String companyPassword = company.getPassword();
+            if (companyPassword == null || !companyPassword.equals(request.getPassword())) {
+                return new LoginResponse(false, errorMessage, null);
             }
         } else {
-            if (!company.getAdminPassword().equals(request.getPassword())) {
-                return new LoginResponse(false, "Şifre hatalı.");
+            String adminPassword = company.getAdminPassword();
+            if (adminPassword == null || !adminPassword.equals(request.getPassword())) {
+                return new LoginResponse(false, errorMessage, null);
             }
         }
 
+        // Token oluştur (companyId içerir)
+        String token = tokenService.generateToken(company.getId());
 
-        return new LoginResponse(true, "Giriş başarılı.");
+        return new LoginResponse(true, "Giriş başarılı.", token);
     }
 
 }

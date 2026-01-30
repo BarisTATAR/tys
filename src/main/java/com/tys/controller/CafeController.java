@@ -36,6 +36,7 @@ public class CafeController {
         return ResponseEntity.ok().build();
     }
 
+    //değişecek
     @GetMapping("/{id}")
     public ResponseEntity<Cafe> getCafeById(@PathVariable Long id) {
         return ResponseEntity.ok(cafeService.getCafeById(id));

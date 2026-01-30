@@ -19,6 +19,9 @@ public class Cafe {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "company_id", nullable = false, unique = true)
+    private Long companyId;
+
     @Column(name = "name")
     private String name;
 

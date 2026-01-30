@@ -5,6 +5,7 @@ import com.tys.model.Room;
 import com.tys.request.CreateRoomRequest;
 import com.tys.request.UpdateRoomRequest;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 
@@ -14,8 +15,12 @@ import java.util.List;
 public interface RoomMapper {
     Room createRoomRequestToEntity(CreateRoomRequest createRoomRequest);
 
-    //@Mapping(source = "id", target = "id", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateExistingRoomWithRoomRequest(UpdateRoomRequest updateRoomRequest, @MappingTarget Room existingRoom);
+
+    @Mapping(source = "company.id", target = "companyId")
+    @Mapping(source = "company.name", target = "companyName")
     RoomDto toDto(Room room);
+    
     List<RoomDto> toDtoList(List<Room> rooms);
 }

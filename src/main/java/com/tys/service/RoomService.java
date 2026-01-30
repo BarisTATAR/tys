@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +26,16 @@ public class RoomService {
 
     public void createRoom(CreateRoomRequest request) {
         Room room = roomMapper.createRoomRequestToEntity(request);
-        Optional<Company> company = companyRepository.findById(request.getCompanyId());
+        Optional<Company> company = companyRepository.findByName(request.getCompanyName());
         if (company.isEmpty()) {
             throw new RuntimeException("Company not found with Id: " + request.getCompanyId());
-        } else {
-            room.setCompany(company.get());
         }
+        long currentRoomCount = roomRepository.countByCompany(company.get());
+
+        if (currentRoomCount >= company.get().getTotalRoomNumber()) {
+            throw new RuntimeException("Toplam oda sayısı sınırı aşıldı. Maksimum izin verilen oda sayısı: " + company.get().getTotalRoomNumber());
+        }
+        room.setCompany(company.get());
         roomRepository.save(room);
     }
 
@@ -50,22 +53,22 @@ public class RoomService {
     }
 
     public RoomDto getRoomById(Long id) {
-        Room room = roomRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+        Room room = roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
         return roomMapper.toDto(room);
     }
 
     public List<RoomDto> getAllRooms() {
-        return roomRepository.findAllWithReservations().stream()
-                .map(roomMapper::toDto)
-                .toList();
+        return roomRepository.findAllWithReservations().stream().map(roomMapper::toDto).toList();
     }
 
     // Boş odaları al
     public List<RoomDto> getAvailableRooms(LocalDateTime checkInDate, LocalDateTime checkOutDate) {
-        return roomRepository.findAvailableRooms(checkInDate, checkOutDate).stream()
-                .map(roomMapper::toDto)
-                .toList();
+        return roomRepository.findAvailableRooms(checkInDate, checkOutDate).stream().map(roomMapper::toDto).toList();
+    }
+
+    // CompanyId'ye göre tüm odaları getir
+    public List<RoomDto> getAllRoomsByCompanyId(Long companyId) {
+        return roomRepository.findAllByCompanyIdWithReservations(companyId).stream().map(roomMapper::toDto).toList();
     }
 }
 

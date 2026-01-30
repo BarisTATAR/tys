@@ -1,6 +1,6 @@
 package com.tys.repository;
 
-import com.tys.dto.RoomDto;
+import com.tys.model.Company;
 import com.tys.model.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,6 +25,12 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("SELECT DISTINCT r FROM Room r LEFT JOIN FETCH r.reservations")
     List<Room> findAllWithReservations();
 
+    @Query("SELECT DISTINCT r FROM Room r LEFT JOIN FETCH r.reservations LEFT JOIN FETCH r.company WHERE r.company.id = :companyId")
+    List<Room> findAllByCompanyIdWithReservations(@Param("companyId") Long companyId);
+
     Optional<Room> findByNumber(Integer number);
+
+    long countByCompany(Company company);
+
 
 }

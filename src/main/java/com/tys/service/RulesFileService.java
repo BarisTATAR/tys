@@ -3,42 +3,52 @@ import com.tys.dto.RulesFileDto;
 import com.tys.mapper.RulesFileMapper;
 import com.tys.model.RulesFile;
 import com.tys.repository.RulesFileRepository;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class RulesFileService {
-    private final RulesFileRepository rulesFileRepository;
-    private final RulesFileMapper rulesFileMapper;
+    @Autowired
+    private RulesFileRepository repository;
 
-    public RulesFileService(RulesFileRepository repository, RulesFileMapper mapper) {
-        this.rulesFileRepository = repository;
-        this.rulesFileMapper = mapper;
-    }
+    @Autowired
+    private RulesFileMapper mapper;
 
-    // DOCX Upload
-    public RulesFileDto uploadDocx(Long companyId, MultipartFile file) throws IOException {
-        RulesFile entity = rulesFileRepository.findByCompanyId(companyId)
+    @Transactional
+    public RulesFileDto uploadWord(Long companyId, MultipartFile file) throws IOException {
+        // Word dosyasını text’e çevir
+        StringBuilder text = new StringBuilder();
+        try (XWPFDocument doc = new XWPFDocument(file.getInputStream())) {
+            for (XWPFParagraph para : doc.getParagraphs()) {
+                text.append(para.getText()).append("\n");
+            }
+        }
+
+        // DB kaydı
+        RulesFile rulesFile = repository.findByCompanyId(companyId)
                 .orElse(new RulesFile());
+        rulesFile.setCompanyId(companyId);
+        rulesFile.setFileData(file.getBytes());
+        rulesFile.setRulesText(text.toString());
+        rulesFile.setFileName(file.getOriginalFilename());
+        rulesFile.setContentType(file.getContentType());
+        rulesFile.setCreatedAt(LocalDateTime.now());
 
-        entity.setCompanyId(companyId);
-        entity.setFileName(file.getOriginalFilename());
-        entity.setFileData(file.getBytes());
-        entity.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        entity.setCreatedAt(LocalDateTime.now());
+        RulesFile saved = repository.save(rulesFile);
 
-        rulesFileRepository.save(entity);
-
-        return rulesFileMapper.toDto(entity);
+        return mapper.toDto(saved);
     }
 
-    // DOCX Download
-    public RulesFileDto downloadDocx(Long companyId) {
-        RulesFile entity = rulesFileRepository.findByCompanyId(companyId)
-                .orElseThrow(() -> new RuntimeException("Dosya bulunamadı"));
-
-        return rulesFileMapper.toDto(entity);
+    @Transactional(readOnly = true)
+    public Optional<RulesFileDto> getByCompanyId(Long companyId) {
+        return repository.findByCompanyId(companyId)
+                .map(mapper::toDto);
     }
 }
