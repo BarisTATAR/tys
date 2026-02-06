@@ -5,12 +5,12 @@ import com.tys.request.CreateRoomRequest;
 import com.tys.request.DeleteRoomRequest;
 import com.tys.request.UpdateRoomRequest;
 import com.tys.service.RoomService;
-import com.tys.util.SessionUtil;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -25,7 +25,6 @@ import java.util.Map;
 public class RoomController {
 
     private final RoomService roomService;
-    private final SessionUtil sessionUtil;
 
     @PostMapping("/create")
     public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest request) {
@@ -61,39 +60,25 @@ public class RoomController {
     }
 
     @GetMapping("/company-rooms")
-    public ResponseEntity<?> getAllRoomsByCompanyId(HttpSession session) {
+    public ResponseEntity<?> getAllRoomsByCompanyId() {
         try {
-            // Session geçerliliğini kontrol et
-            if (!sessionUtil.isSessionValid(session)) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-                error.put("error", "SESSION_EXPIRED");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-            
-            // Session'ı yenile (her istekte timeout süresini sıfırla)
-            sessionUtil.touchSession(session);
-            
-            // Session'dan companyId'yi al
-            Long companyId = sessionUtil.getCompanyIdFromSession(session);
-            
-            if (companyId == null) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-                error.put("error", "SESSION_EXPIRED");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-            
-            // CompanyId'ye göre odaları getir
+            Long companyId = getCurrentCompanyIdFromAuth();
             List<RoomDto> rooms = roomService.getAllRoomsByCompanyId(companyId);
             return ResponseEntity.ok(rooms);
-            
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Room bilgileri alınamadı: " + e.getMessage());
             error.put("error", "ROOM_FETCH_ERROR");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            return ResponseEntity.status(500).body(error);
         }
+    }
+
+    private Long getCurrentCompanyIdFromAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            return (Long) auth.getPrincipal();
+        }
+        throw new IllegalStateException("Kimlik doğrulanamadı.");
     }
 
     @GetMapping("/{id}")

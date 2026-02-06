@@ -34,7 +34,6 @@ public class KbsController {
     @PostMapping("/checkInGuest")
     public ResponseEntity<KbsGuestCheckInResponse> checkInGuest(@ModelAttribute KbsGuestCheckInRequest request) {
         return ResponseEntity.ok(kbsService.checkInGuest(request));
-
     }
 
     @PostMapping("/checkOutGuest")

@@ -1,7 +1,6 @@
 package com.tys.service;
 
 import com.tys.dto.CafeDto;
-import com.tys.dto.GuestDto;
 import com.tys.mapper.CafeMapper;
 import com.tys.model.Cafe;
 import com.tys.repository.CafeRepository;
@@ -42,10 +41,11 @@ public class CafeService {
         return cafeRepository.findById(id).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + id));
     }
 
-    public List<CafeDto> getAllCafeItems() {
-        return cafeRepository.findAll()
+    public List<CafeDto> getAllCafeItems(Long companyId) {
+        return cafeRepository.findAllByCompanyId(companyId)
                 .stream()
                 .map(cafeMapper::toDto)
-                .toList();    }
+                .toList();
+    }
 
 }

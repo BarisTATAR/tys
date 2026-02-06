@@ -50,8 +50,7 @@ public class ReservationCafeItemService {
         List<ReservationCafeItem> items = reservationCafeItemRepository.findAllByReservationId(reservationId);
 
         if (items.isEmpty()) {
-            throw new RuntimeException("Rezervasyon bulunamadı");
-        }
+            return totalAmount;        }
 
         for (ReservationCafeItem item : items) {
             // Cafe kaydını çek

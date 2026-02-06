@@ -9,6 +9,7 @@ import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.LoginRequest;
 import com.tys.request.UpdateCompanyRequest;
 import com.tys.response.LoginResponse;
+import com.tys.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
-    private final TokenService tokenService;
+    private final JwtService jwtService;
 
     public void createCompany(CreateCompanyRequest request) {
         Company company = companyMapper.createCompanyRequestToEntity(request);
@@ -79,8 +80,8 @@ public class CompanyService {
             }
         }
 
-        // Token oluştur (companyId içerir)
-        String token = tokenService.generateToken(company.getId());
+        // JWT oluştur (companyId claim ile)
+        String token = jwtService.generateToken(company.getId());
 
         return new LoginResponse(true, "Giriş başarılı.", token);
     }

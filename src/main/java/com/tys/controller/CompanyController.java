@@ -10,11 +10,11 @@ import com.tys.request.UpdateCompanyRequest;
 import com.tys.response.LoginResponse;
 import com.tys.service.CompanyService;
 import com.tys.service.RulesFileService;
-import com.tys.util.SessionUtil;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,37 +31,23 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final RulesFileService rulesFileService;
-    private final SessionUtil sessionUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpSession session) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         LoginResponse response = companyService.login(request, false);
-
-        if (response.isSuccess() && response.getToken() != null) {
-            // Session'a token kaydet
-            sessionUtil.setTokenToSession(session, response.getToken());
-        }
-
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/admin_login")
-    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest request, HttpSession session) {
+    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest request) {
         LoginResponse response = companyService.login(request, true);
-
-        if (response.isSuccess() && response.getToken() != null) {
-            // Session'a token kaydet
-            sessionUtil.setTokenToSession(session, response.getToken());
-        }
-
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpSession session) {
-        sessionUtil.clearSession(session);
-        Map<String, String> response = new java.util.HashMap<>();
-        response.put("message", "Başarıyla çıkış yapıldı.");
+    public ResponseEntity<Map<String, String>> logout() {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Başarıyla çıkış yapıldı. Token'ı client tarafında silin.");
         return ResponseEntity.ok(response);
     }
 
@@ -100,59 +86,20 @@ public class CompanyController {
     }
 
     /**
-     * Session'dan token'ı kontrol eder ve companyId döner
+     * JWT'den companyId döner (Authorization: Bearer &lt;token&gt; gerekli)
      */
     @GetMapping("/current-company-id")
-    public ResponseEntity<?> getCurrentCompanyId(HttpSession session) {
-        if (!sessionUtil.isSessionValid(session)) {
-            Map<String, String> error = new java.util.HashMap<>();
-            error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-            error.put("error", "SESSION_EXPIRED");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
-
-        // Session'ı yenile (her istekte timeout süresini sıfırla)
-        sessionUtil.touchSession(session);
-
-        Long companyId = sessionUtil.getCompanyIdFromSession(session);
-        if (companyId != null) {
-            return ResponseEntity.ok(companyId);
-        }
-
-        Map<String, String> error = new java.util.HashMap<>();
-        error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-        error.put("error", "SESSION_EXPIRED");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    public ResponseEntity<Long> getCurrentCompanyId() {
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return ResponseEntity.ok(companyId);
     }
 
     @PostMapping("/upload-rules-file")
-    public ResponseEntity<?> uploadWord(HttpSession session,
-                                        @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadWord(@RequestParam("file") MultipartFile file) {
         try {
-            // Session geçerliliğini kontrol et
-            if (!sessionUtil.isSessionValid(session)) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-                error.put("error", "SESSION_EXPIRED");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-            
-            // Session'ı yenile (her istekte timeout süresini sıfırla)
-            sessionUtil.touchSession(session);
-
-            // Session'dan companyId'yi al
-            Long companyId = sessionUtil.getCompanyIdFromSession(session);
-
-            if (companyId == null) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-                error.put("error", "SESSION_EXPIRED");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-
+            Long companyId = getCurrentCompanyIdFromAuth();
             RulesFileDto dto = rulesFileService.uploadWord(companyId, file);
             return ResponseEntity.ok(dto);
-
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
@@ -163,23 +110,8 @@ public class CompanyController {
     }
 
     @GetMapping("/get-rules-file")
-    public ResponseEntity<?> getRulesFile(HttpSession session) {
-        if (!sessionUtil.isSessionValid(session)) {
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-            error.put("error", "SESSION_EXPIRED");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
-        sessionUtil.touchSession(session);
-
-        Long companyId = sessionUtil.getCompanyIdFromSession(session);
-        if (companyId == null) {
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-            error.put("error", "SESSION_EXPIRED");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
-
+    public ResponseEntity<?> getRulesFile() {
+        Long companyId = getCurrentCompanyIdFromAuth();
         Optional<RulesFileDto> dto = rulesFileService.getByCompanyId(companyId);
         if (dto.isEmpty()) {
             Map<String, String> error = new HashMap<>();
@@ -188,5 +120,13 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
         return ResponseEntity.ok(dto.get());
+    }
+
+    private Long getCurrentCompanyIdFromAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            return (Long) auth.getPrincipal();
+        }
+        throw new IllegalStateException("Kimlik doğrulanamadı.");
     }
 }
