@@ -1,23 +1,31 @@
 package com.tys.service;
 
+import com.tys.client.MusteriKimlikNoGirisTalep;
+import com.tys.client.SnfEnumKonaklayanKullanimSekli;
 import com.tys.dto.ReservationDto;
 import com.tys.enums.ReservationStatus;
 import com.tys.mapper.GuestMapper;
 import com.tys.mapper.ReservationMapper;
+import com.tys.model.Company;
 import com.tys.model.Payment;
 import com.tys.model.Reservation;
 import com.tys.model.Room;
 import com.tys.model.Guest;
+import com.tys.repository.CompanyRepository;
 import com.tys.repository.PaymentRepository;
 import com.tys.repository.ReservationRepository;
 import com.tys.repository.RoomRepository;
 import com.tys.request.*;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 @Service
@@ -28,6 +36,7 @@ public class ReservationService {
     private final GuestMapper guestMapper;
     private final RoomRepository roomRepository;
     private final PaymentRepository paymentRepository;
+    private final CompanyRepository companyRepository;
     private final ReservationCafeItemService reservationCafeItemService;
     private final VatanSmsService vatanSmsService;
     private final KbsService kbsService;
@@ -35,18 +44,19 @@ public class ReservationService {
     private final String CHECK_IN_DONE_MESSAGE = " giriş işlemleriniz başarıyla tamamlanmıştır.";
     private final String CHECK_OUT_DONE_MESSAGE = " çıkış işlemleriniz başarıyla tamamlanmıştır. Görüşleriniz bizim için değerli, bizi değerlendirmeyi unutmayın.";
 
-    public ReservationService(ReservationRepository reservationRepository, ReservationMapper reservationMapper, GuestMapper guestMapper, RoomRepository roomRepository, PaymentRepository paymentRepository, ReservationCafeItemService reservationCafeItemService, VatanSmsService vatanSmsService, KbsService kbsService) {
+    public ReservationService(ReservationRepository reservationRepository, ReservationMapper reservationMapper, GuestMapper guestMapper, RoomRepository roomRepository, PaymentRepository paymentRepository, CompanyRepository companyRepository, ReservationCafeItemService reservationCafeItemService, VatanSmsService vatanSmsService, KbsService kbsService) {
         this.reservationRepository = reservationRepository;
         this.reservationMapper = reservationMapper;
         this.guestMapper = guestMapper;
         this.roomRepository = roomRepository;
         this.paymentRepository = paymentRepository;
+        this.companyRepository = companyRepository;
         this.reservationCafeItemService = reservationCafeItemService;
         this.vatanSmsService = vatanSmsService;
         this.kbsService = kbsService;
     }
 
-    public void updateReservation(UpdateReservationRequest request) {
+    public void updateReservation(UpdateReservationRequest request) throws Exception {
         Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + request.getId()));
         // 1️⃣ Eğer status CHECKOUT yapılmak isteniyorsa borç kontrolü yap
 
@@ -64,10 +74,14 @@ public class ReservationService {
         } else if (request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE) {
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_IN_DONE_MESSAGE));
+            for (Guest guest : request.getGuests()) {
+                kbsService.checkInGuest(getGuestForKBS(guest));
+            }
         } else if (request.getReservationStatus() == ReservationStatus.CHECK_OUT_DONE) {
-            isAllPaymentsCompleted(request, existingReservation);
+//            isAllPaymentsCompleted(request, existingReservation);
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
-//                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_OUT_DONE_MESSAGE));
+//                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_OUT_DONE_MESSAGE + " " +
+//                            existingReservation.getCompany().getGoogleCommentsUrl()));
         }
 
         reservationMapper.updateExistingReservationWithReservationRequest(request, existingReservation);
@@ -99,8 +113,12 @@ public class ReservationService {
     }
 
     @Transactional
-    public void createReservation(CreateReservationRequest request) {
+    public void createReservation(CreateReservationRequest request, Long companyId) {
         Reservation reservation = reservationMapper.createReservationRequestToEntity(request);
+
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
+        reservation.setCompany(company);
 
         List<Room> roomsFromDb = new ArrayList<>();
         for (CreateRoomRequest roomFromRequest : request.getRoomList()) {
@@ -136,8 +154,8 @@ public class ReservationService {
                 .toList();
     }
 
-    public List<ReservationDto> getAllWithGuests() {
-        List<Reservation> reservations = reservationRepository.findAllWithGuests();
+    public List<ReservationDto> getAllWithGuests(Long companyId) {
+        List<Reservation> reservations = reservationRepository.findAllWithGuestsByCompanyId(companyId);
         return reservations.stream()
                 .map(reservationMapper::toDto)
                 .toList();
@@ -163,4 +181,33 @@ public class ReservationService {
         reservationRepository.save(reservation);
     }
 
+    private KbsGuestCheckInRequest getGuestForKBS(Guest guest) throws Exception {
+        KbsGuestCheckInRequest kbsGuestCheckInRequest = new KbsGuestCheckInRequest();
+
+        MusteriKimlikNoGirisTalep musteriKimlikNoGirisTalep = new MusteriKimlikNoGirisTalep();
+        musteriKimlikNoGirisTalep.setKIMLIKNO(Long.parseLong(guest.getIdentityNumber()));
+        musteriKimlikNoGirisTalep.setGRSTRH(convert(guest.getCheckInDate()));
+        musteriKimlikNoGirisTalep.setKULLANIMSEKLI(SnfEnumKonaklayanKullanimSekli.KONAKLAMA);
+        // Veriler varsa doldur
+        if (guest.getCountryCode() != null) {
+            musteriKimlikNoGirisTalep.setULKKOD(guest.getCountryCode());
+        }
+        if (guest.getGuestUsageType() != null) {
+            musteriKimlikNoGirisTalep.setKULLANIMSEKLI(guest.getGuestUsageType());
+        }
+        // TELNO ve PLKNO generated client'ta JAXBElement<String> istediği için burada set edilmiyor
+
+        kbsGuestCheckInRequest.setMusteri(musteriKimlikNoGirisTalep);
+        return kbsGuestCheckInRequest;
+    }
+
+    public XMLGregorianCalendar convert(LocalDateTime localDateTime) throws Exception {
+
+        GregorianCalendar calendar = GregorianCalendar.from(
+                localDateTime.atZone(ZoneId.systemDefault())
+        );
+
+        return DatatypeFactory.newInstance()
+                .newXMLGregorianCalendar(calendar);
+    }
 }

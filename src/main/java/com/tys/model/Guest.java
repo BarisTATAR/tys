@@ -67,6 +67,10 @@ public class Guest {
     @Column(name = "check_out_date")
     private LocalDateTime checkOutDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @ManyToMany(mappedBy = "guests")
     private List<Reservation> reservations = new ArrayList<>();
 }

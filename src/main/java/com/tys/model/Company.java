@@ -35,6 +35,9 @@ public class Company {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "google_comments_url" , columnDefinition = "TEXT")
+    private String googleCommentsUrl;
+
     @Column(name = "category")
     private CompanyCategory category;
 

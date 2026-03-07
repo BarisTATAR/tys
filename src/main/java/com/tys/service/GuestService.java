@@ -2,7 +2,9 @@ package com.tys.service;
 
 import com.tys.dto.GuestDto;
 import com.tys.mapper.GuestMapper;
+import com.tys.model.Company;
 import com.tys.model.Guest;
+import com.tys.repository.CompanyRepository;
 import com.tys.repository.GuestRepository;
 import com.tys.request.CreateGuestRequest;
 import com.tys.request.DeleteGuestRequest;
@@ -20,10 +22,14 @@ import java.util.List;
 public class GuestService {
 
     private final GuestRepository guestRepository;
+    private final CompanyRepository companyRepository;
     private final GuestMapper guestMapper;
 
-    public void createGuest(CreateGuestRequest request) {
+    public void createGuest(CreateGuestRequest request, Long companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
         Guest guest = guestMapper.createGuestRequestToEntity(request);
+        guest.setCompany(company);
         guestRepository.save(guest);
     }
 
@@ -40,17 +46,19 @@ public class GuestService {
         guestRepository.save(existingGuest);
     }
 
-    public List<GuestDto> getAllGuest() {
-        return guestRepository.findAll()
+    public List<GuestDto> getAllGuest(Long companyId) {
+        return guestRepository.findAllByCompanyId(companyId)
                 .stream()
                 .map(guestMapper::toDto)
                 .toList();
     }
 
-    public List<String> getAllGuestForSMS() {
-        return guestRepository.findAll()
+    public List<String> getAllGuestForSMS(Long companyId) {
+        return guestRepository.findAllByCompanyId(companyId)
                 .stream()
                 .map(Guest::getPhoneNumber)
+                .filter(phone -> phone != null && !phone.isBlank())
+                .distinct()
                 .toList();
     }
 
@@ -60,43 +68,45 @@ public class GuestService {
         return guestMapper.toDto(guest);
     }
 
-    public List<String> getAllGuestInYear(int year) {
-
+    public List<String> getAllGuestInYear(int year, Long companyId) {
         LocalDateTime start = LocalDate.of(year, 1, 1).atStartOfDay();
         LocalDateTime end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
-
-        return guestRepository.findAllByCheckInYear(start, end)
+        return guestRepository.findAllByCheckInYearAndCompanyId(start, end, companyId)
                 .stream()
                 .map(Guest::getPhoneNumber)
+                .filter(phone -> phone != null && !phone.isBlank())
+                .distinct()
                 .toList();
     }
 
-
-    public List<String> getAllGuestForDay(int day) {
+    public List<String> getAllGuestForDay(int day, Long companyId) {
+        List<Guest> companyGuests = guestRepository.findAllByCompanyId(companyId);
         if (day >= 5) {
-            return guestRepository.findAll()
-                    .stream()
+            return companyGuests.stream()
+                    .filter(g -> g.getCheckInDate() != null && g.getCheckOutDate() != null)
                     .filter(g -> {
                         long stayDays = ChronoUnit.DAYS.between(
                                 g.getCheckInDate().toLocalDate(),
                                 g.getCheckOutDate().toLocalDate()
                         );
-                        return stayDays >= day; // day veya daha uzun kalanlar
+                        return stayDays >= day;
                     })
                     .map(Guest::getPhoneNumber)
+                    .filter(phone -> phone != null && !phone.isBlank())
                     .distinct()
                     .toList();
         } else {
-            return guestRepository.findAll()
-                    .stream()
+            return companyGuests.stream()
+                    .filter(g -> g.getCheckInDate() != null && g.getCheckOutDate() != null)
                     .filter(g -> {
                         long stayDays = ChronoUnit.DAYS.between(
                                 g.getCheckInDate().toLocalDate(),
                                 g.getCheckOutDate().toLocalDate()
                         );
-                        return stayDays == day; // Tam olarak 'day' kadar kalanlar
+                        return stayDays == day;
                     })
-                    .map(Guest::getPhoneNumber) // direkt Guest'ten alıyoruz
+                    .map(Guest::getPhoneNumber)
+                    .filter(phone -> phone != null && !phone.isBlank())
                     .distinct()
                     .toList();
         }

@@ -61,9 +61,9 @@ public class RoomService {
         return roomRepository.findAllWithReservations().stream().map(roomMapper::toDto).toList();
     }
 
-    // Boş odaları al
-    public List<RoomDto> getAvailableRooms(LocalDateTime checkInDate, LocalDateTime checkOutDate) {
-        return roomRepository.findAvailableRooms(checkInDate, checkOutDate).stream().map(roomMapper::toDto).toList();
+    // Boş odaları al; companyId verilmişse sadece o işletmeye ait uygun odalar döner
+    public List<RoomDto> getAvailableRooms(LocalDateTime checkInDate, LocalDateTime checkOutDate, Long companyId) {
+            return roomRepository.findAvailableRoomsByCompanyId(checkInDate, checkOutDate, companyId).stream().map(roomMapper::toDto).toList();
     }
 
     // CompanyId'ye göre tüm odaları getir

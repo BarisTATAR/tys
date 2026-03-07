@@ -22,6 +22,14 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             "ORDER BY r.number ASC")
     List<Room> findAvailableRooms(@Param("checkInDate") LocalDateTime checkInDate, @Param("checkOutDate") LocalDateTime checkOutDate);
 
+    // Belirtilen tarih aralığında ve işletmeye ait rezerve edilmemiş odaları getiren sorgu
+    @Query("SELECT r FROM Room r WHERE r.company.id = :companyId AND r.id NOT IN (" +
+            "SELECT room.id FROM Reservation res " +
+            "JOIN res.rooms room " +
+            "WHERE res.checkInDate < :checkOutDate AND res.checkOutDate > :checkInDate) " +
+            "ORDER BY r.number ASC")
+    List<Room> findAvailableRoomsByCompanyId(@Param("checkInDate") LocalDateTime checkInDate, @Param("checkOutDate") LocalDateTime checkOutDate, @Param("companyId") Long companyId);
+
     @Query("SELECT DISTINCT r FROM Room r LEFT JOIN FETCH r.reservations")
     List<Room> findAllWithReservations();
 

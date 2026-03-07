@@ -14,6 +14,7 @@ public class UpdateCompanyRequest {
     private Long id;
     private String name;
     private String address;
+    private String googleCommentsUrl;
     private CompanyCategory category;
     private Integer startYear;
     private String email;

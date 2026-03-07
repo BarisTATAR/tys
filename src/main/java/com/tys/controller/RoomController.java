@@ -105,6 +105,7 @@ public class RoomController {
     public List<RoomDto> getAvailableRooms(
             @RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkInDate,
             @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOutDate) {
-        return roomService.getAvailableRooms(checkInDate, checkOutDate);
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return roomService.getAvailableRooms(checkInDate, checkOutDate, companyId);
     }
 }

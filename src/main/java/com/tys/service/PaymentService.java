@@ -4,7 +4,9 @@ import com.tys.dto.PaymentDto;
 import com.tys.enums.PaymentType;
 import com.tys.mapper.PaymentMapper;
 import com.tys.model.Payment;
+import com.tys.model.Reservation;
 import com.tys.repository.PaymentRepository;
+import com.tys.repository.ReservationRepository;
 import com.tys.request.CreatePaymentRequest;
 import com.tys.request.UpdatePaymentRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +21,17 @@ import java.util.List;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final ReservationRepository reservationRepository;
     private final PaymentMapper paymentMapper;
 
-    public void createPayment(CreatePaymentRequest request) {
+    public void createPayment(CreatePaymentRequest request, Long companyId) {
+        Reservation reservation = reservationRepository.findById(request.getReservationId())
+                .orElseThrow(() -> new RuntimeException("Reservation not found: " + request.getReservationId()));
+        if (reservation.getCompany() == null || !reservation.getCompany().getId().equals(companyId)) {
+            throw new RuntimeException("Bu rezervasyon için ödeme oluşturma yetkiniz yok.");
+        }
         Payment payment = paymentMapper.createPaymentRequestToEntity(request);
+        payment.setReservation(reservation);
         paymentRepository.save(payment);
     }
 
@@ -53,15 +62,13 @@ public class PaymentService {
         return paymentMapper.toDto(payment);
     }
 
-    public BigDecimal getPayments(LocalDate startDate, LocalDate endDate, PaymentType paymentType) {
+    public BigDecimal getPayments(LocalDate startDate, LocalDate endDate, PaymentType paymentType, Long companyId) {
         List<Payment> payments;
-
         if (paymentType == PaymentType.ALL) {
-            payments = paymentRepository.findByDateRange(startDate, endDate);
+            payments = paymentRepository.findByDateRangeAndCompanyId(startDate, endDate, companyId);
         } else {
-            payments = paymentRepository.findByDateRangeAndPaymentType(startDate, endDate, paymentType);
+            payments = paymentRepository.findByDateRangeAndPaymentTypeAndCompanyId(startDate, endDate, paymentType, companyId);
         }
-
         return paymentMapper.calculateTotalAmount(payments);
     }
 }

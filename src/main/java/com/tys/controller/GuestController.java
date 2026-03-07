@@ -9,6 +9,8 @@ import com.tys.service.GuestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,9 +26,19 @@ public class GuestController {
 
     @Autowired
     private ExcelImportService excelImportService;
+
+    private Long getCurrentCompanyIdFromAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            return (Long) auth.getPrincipal();
+        }
+        throw new IllegalStateException("Kimlik doğrulanamadı.");
+    }
+
     @PostMapping("/create")
     public ResponseEntity<Void> createGuest(@RequestBody CreateGuestRequest request) {
-        guestService.createGuest(request);
+        Long companyId = getCurrentCompanyIdFromAuth();
+        guestService.createGuest(request, companyId);
         return ResponseEntity.ok().build();
     }
 
@@ -49,28 +61,34 @@ public class GuestController {
 
     @GetMapping("/all")
     public ResponseEntity<List<GuestDto>> getAllGuest() {
-        return ResponseEntity.ok(guestService.getAllGuest());
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return ResponseEntity.ok(guestService.getAllGuest(companyId));
     }
 
     @GetMapping("sms/all")
     public ResponseEntity<List<String>> getAllGuestForSMS() {
-        return ResponseEntity.ok(guestService.getAllGuestForSMS());
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return ResponseEntity.ok(guestService.getAllGuestForSMS(companyId));
     }
 
     @GetMapping("/year/all/{year}")
     public ResponseEntity<List<String>> getAllGuestInYear(@PathVariable("year") int year) {
-        return ResponseEntity.ok(guestService.getAllGuestInYear(year));
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return ResponseEntity.ok(guestService.getAllGuestInYear(year, companyId));
     }
 
     @GetMapping("/day/all/{day}")
     public ResponseEntity<List<String>> getAllGuestForDay(@PathVariable("day") int day) {
-        return ResponseEntity.ok(guestService.getAllGuestForDay(day));
+        Long companyId = getCurrentCompanyIdFromAuth();
+        return ResponseEntity.ok(guestService.getAllGuestForDay(day, companyId));
     }
 
     @PostMapping("/import")
     public ResponseEntity<String> importExcel(@RequestParam("file") MultipartFile file) {
         try {
-            excelImportService.importGuestsFromExcel(file);
+            Long companyId = getCurrentCompanyIdFromAuth();
+
+            excelImportService.importGuestsFromExcel(file, companyId);
             return ResponseEntity.ok("Excel başarıyla içeri aktarıldı!");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());

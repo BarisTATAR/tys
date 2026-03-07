@@ -1,5 +1,6 @@
 package com.tys.controller;
 
+import com.tys.dto.GuestDto;
 import com.tys.dto.ReservationDto;
 import com.tys.request.CreateReservationRequest;
 import com.tys.request.DeleteReservationRequest;
@@ -9,6 +10,8 @@ import com.tys.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,10 +24,17 @@ import java.util.Map;
 public class ReservationController {
 
     private final ReservationService reservationService;
-
+    private Long getCurrentCompanyIdFromAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            return (Long) auth.getPrincipal();
+        }
+        throw new IllegalStateException("Kimlik doğrulanamadı.");
+    }
     @PostMapping("/create")
     public ResponseEntity<Void> createReservation(@Valid @RequestBody CreateReservationRequest request) {
-        reservationService.createReservation(request);
+        Long companyId = getCurrentCompanyIdFromAuth();
+        reservationService.createReservation(request, companyId);
         return ResponseEntity.ok().build();
     }
 
@@ -38,6 +48,8 @@ public class ReservationController {
             return ResponseEntity
                     .badRequest() // 400 Bad Request
                     .body(Map.of("message", ex.getMessage()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -54,7 +66,8 @@ public class ReservationController {
 
     @GetMapping("/all")
     public ResponseEntity<List<ReservationDto>> getAllReservations() {
-        return ResponseEntity.ok(reservationService.getAllWithGuests());
+            Long companyId = getCurrentCompanyIdFromAuth();
+            return ResponseEntity.ok(reservationService.getAllWithGuests(companyId));
     }
 
     @PostMapping("/{id}/payments")

@@ -1,6 +1,8 @@
 package com.tys.service;
 
+import com.tys.model.Company;
 import com.tys.model.Guest;
+import com.tys.repository.CompanyRepository;
 import com.tys.repository.GuestRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -17,7 +19,13 @@ public class ExcelImportService {
     @Autowired
     private GuestRepository guestRepository;
 
-    public void importGuestsFromExcel(MultipartFile file) throws Exception {
+    @Autowired
+    private CompanyRepository companyRepository;
+
+    public void importGuestsFromExcel(MultipartFile file, Long companyId) throws Exception {
+
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
 
         Workbook workbook = new XSSFWorkbook(file.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
@@ -33,6 +41,7 @@ public class ExcelImportService {
             guest.setIdentityNumber(getCellValue(row, 3));
             guest.setPlateNumber(getCellValue(row, 4));
             guest.setJob(getCellValue(row, 5));
+            guest.setCompany(company);
 
             guestRepository.save(guest);
         }
