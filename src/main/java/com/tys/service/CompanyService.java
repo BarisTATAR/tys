@@ -68,17 +68,11 @@ public class CompanyService {
 
         Company company = optionalCompany.get();
 
-        if(!isAdmin) {
-            String companyPassword = company.getPassword();
-            if (companyPassword == null || !companyPassword.equals(request.getPassword())) {
-                return new LoginResponse(false, errorMessage, null);
-            }
-        } else {
-            String adminPassword = company.getAdminPassword();
-            if (adminPassword == null || !adminPassword.equals(request.getPassword())) {
-                return new LoginResponse(false, errorMessage, null);
-            }
+        String companyPassword = company.getPassword();
+        if (companyPassword == null || !companyPassword.equals(request.getPassword())) {
+            return new LoginResponse(false, errorMessage, null);
         }
+
 
         // JWT oluştur (companyId claim ile)
         String token = jwtService.generateToken(company.getId());

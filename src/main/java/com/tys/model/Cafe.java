@@ -12,14 +12,14 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @Table(schema = "tys", name = "cafe")
-public class Cafe {
+public class                                    Cafe {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "company_id", nullable = false, unique = true)
+    @Column(name = "company_id", nullable = false)
     private Long companyId;
 
     @Column(name = "name")

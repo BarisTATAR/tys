@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,18 +36,22 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight: tüm OPTIONS (AntPathRequestMatcher ile PathPattern hatası önlenir)
+                        .requestMatchers(new AntPathRequestMatcher("/**", "OPTIONS")).permitAll()
                         // Login ve kayıt: token gerekmez
-                        .requestMatchers("/company/login", "/company/admin_login", "/admin/login").permitAll()
-                        .requestMatchers("/company/create").permitAll()
-                        // Aşağıdaki tüm path'ler JWT (Authorization: Bearer <token>) gerektirir
-                        .requestMatchers("/company/**").authenticated()
-                        .requestMatchers("/cafe/**").authenticated()
-                        .requestMatchers("/room/**").authenticated()
-                        .requestMatchers("/payment/**").authenticated()
-                        .requestMatchers("/guest/**").authenticated()
-                        .requestMatchers("/reservation/**").authenticated()
-                        .requestMatchers("/reservation-cafe-items/**").authenticated()
-                        .requestMatchers("/kbs/**").authenticated()
+                        .requestMatchers("/company/login", "/company/login/").permitAll()
+                        .requestMatchers("/company/admin_login", "/company/admin_login/").permitAll()
+                        .requestMatchers("/admin/login", "/admin/login/").permitAll()
+                        .requestMatchers("/company/create", "/company/create/").permitAll()
+                        // Aşağıdaki tüm path'ler JWT gerektirir (Ant matcher kullanımı)
+                        .requestMatchers(new AntPathRequestMatcher("/company/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/cafe/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/room/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/payment/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/guest/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/reservation/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/reservation-cafe-items/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/kbs/**")).authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -56,10 +61,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000", "http://127.0.0.1:3000",
+                "http://localhost", "http://127.0.0.1",
+                "http://localhost:80", "http://127.0.0.1:80"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

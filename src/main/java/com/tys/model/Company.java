@@ -26,9 +26,6 @@ public class Company {
     @Column(nullable = false)      //işletme sahibine verilecek şifre
     private String password;
 
-    @Column(nullable = false)      //işletme adminine verilecek şifre
-    private String adminPassword;
-
     @Column(name = "name")
     private String name;
 

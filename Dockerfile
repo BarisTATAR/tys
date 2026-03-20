@@ -1,24 +1,29 @@
-# Use an official Maven image as the base image
-FROM maven:3.9.5-amazoncorretto-21 AS build
+# Build stage - Gradle ile derleme
+FROM eclipse-temurin:17-jdk AS build
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the pom.xml and the project files to the container
+# Gradle wrapper ve build dosyalarını kopyala
+COPY gradlew .
+COPY gradle gradle
 COPY build.gradle .
-COPY src ./src
+COPY settings.gradle* ./
 
-# Build the application using Maven
-RUN mvn clean package -DskipTests
+# Kaynak kodu kopyala
+COPY src src
 
-# Java 21 kullanarak bir temel imajdan başla
-FROM openjdk:21-slim
+# WSDL generate + JAR oluştur (test atlanır, ağ erişimi WSDL için gerekir)
+RUN ./gradlew bootJar --no-daemon -x test
 
-# Uygulamayı çalıştıracağımız dizini oluştur
+# Run stage
+FROM eclipse-temurin:17-jre
+
 WORKDIR /app
 
-# Maven build sonucu oluşan JAR dosyasını kopyala (Örnek: my-app.jar)
-COPY --from=build /app/target/*.jar app.jar
+# Build aşamasından JAR'ı kopyala (Spring Boot tek JAR)
+COPY --from=build /app/build/libs/*.jar app.jar
 
-# Uygulamayı çalıştır
+# Varsayılan: port 8080
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

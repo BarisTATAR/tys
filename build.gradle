@@ -8,6 +8,8 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'java'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 repositories {
@@ -32,6 +34,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.4.4'
     implementation 'org.springframework.boot:spring-boot-starter-web:3.4.4'
     implementation 'org.springframework.boot:spring-boot-starter-validation:3.4.4'
+    implementation 'org.springframework.boot:spring-boot-starter-security:3.4.4'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.3'
+    implementation 'org.apache.poi:poi:5.2.3'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
     compileOnly 'org.projectlombok:lombok:1.18.28'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.4.4'
@@ -75,7 +85,13 @@ compileJava.dependsOn wsdl2java
 group = 'com'
 version = '0.0.1-SNAPSHOT'
 description = 'tys'
-java.sourceCompatibility = JavaVersion.VERSION_17
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
 publishing {
     publications {
@@ -92,3 +108,16 @@ tasks.withType(JavaCompile) {
 tasks.withType(Javadoc) {
     options.encoding = 'UTF-8'
 }
+
+// Debug modunda çalıştırma için bootRun task'ını yapılandır
+tasks.named('bootRun') {
+    jvmArgs = [
+        '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+    ]
+}
+
+// Duplicate JAR dosyaları için strateji belirle
+tasks.named('bootJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+

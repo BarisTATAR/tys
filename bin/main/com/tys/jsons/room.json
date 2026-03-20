@@ -1,0 +1,10 @@
+Adding New Room
+http://localhost:8080/rooms
+
+{
+"companyId": 1,
+"number": 101,
+"loaded": true,
+"capacity": 4,
+"seaView": false
+}

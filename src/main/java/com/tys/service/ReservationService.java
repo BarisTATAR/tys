@@ -74,11 +74,11 @@ public class ReservationService {
         } else if (request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE) {
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_IN_DONE_MESSAGE));
-            for (Guest guest : request.getGuests()) {
-                kbsService.checkInGuest(getGuestForKBS(guest));
-            }
+//            for (Guest guest : request.getGuests()) {
+//                kbsService.checkInGuest(getGuestForKBS(guest));
+//            }
         } else if (request.getReservationStatus() == ReservationStatus.CHECK_OUT_DONE) {
-//            isAllPaymentsCompleted(request, existingReservation);
+            isAllPaymentsCompleted(request, existingReservation);
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_OUT_DONE_MESSAGE + " " +
 //                            existingReservation.getCompany().getGoogleCommentsUrl()));
@@ -186,7 +186,7 @@ public class ReservationService {
 
         MusteriKimlikNoGirisTalep musteriKimlikNoGirisTalep = new MusteriKimlikNoGirisTalep();
         musteriKimlikNoGirisTalep.setKIMLIKNO(Long.parseLong(guest.getIdentityNumber()));
-        musteriKimlikNoGirisTalep.setGRSTRH(convert(guest.getCheckInDate()));
+        musteriKimlikNoGirisTalep.setGRSTRH(convert(LocalDateTime.now()));
         musteriKimlikNoGirisTalep.setKULLANIMSEKLI(SnfEnumKonaklayanKullanimSekli.KONAKLAMA);
         // Veriler varsa doldur
         if (guest.getCountryCode() != null) {

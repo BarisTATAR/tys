@@ -27,6 +27,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
+    /** Login ve CORS preflight (OPTIONS) isteklerinde JWT filtresini çalıştırma - path veya sonu (Docker/context path uyumlu) */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+        String path = request.getRequestURI();
+        if (path == null) return false;
+        String n = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+        return n.endsWith("/company/login") || n.equals("/company/login")
+                || n.endsWith("/company/admin_login") || n.equals("/company/admin_login")
+                || n.endsWith("/admin/login") || n.equals("/admin/login");
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
