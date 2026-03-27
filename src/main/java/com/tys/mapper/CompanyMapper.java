@@ -1,17 +1,18 @@
 package com.tys.mapper;
 
+import com.tys.dto.CompanyDto;
+import com.tys.dto.RoomDto;
 import com.tys.model.Company;
+import com.tys.model.Room;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.UpdateCompanyRequest;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CompanyMapper {
     Company createCompanyRequestToEntity(CreateCompanyRequest createCompanyRequest);
-
-    @Mapping(source = "id", target = "id", ignore = true)
     void updateExistingCompanyWithCompanyRequest(UpdateCompanyRequest updateCompanyRequest, @MappingTarget Company existingCompany);
+
+    CompanyDto toDto(Company company);
 }
 

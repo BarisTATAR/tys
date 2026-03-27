@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.RoomDto;
 import com.tys.mapper.RoomMapper;
 import com.tys.model.Company;
 import com.tys.model.Room;
@@ -11,6 +12,7 @@ import com.tys.request.UpdateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,12 +26,16 @@ public class RoomService {
 
     public void createRoom(CreateRoomRequest request) {
         Room room = roomMapper.createRoomRequestToEntity(request);
-        Optional<Company> company = companyRepository.findById(request.getCompanyId());
+        Optional<Company> company = companyRepository.findByName(request.getCompanyName());
         if (company.isEmpty()) {
             throw new RuntimeException("Company not found with Id: " + request.getCompanyId());
-        } else {
-            room.setCompany(company.get());
         }
+        long currentRoomCount = roomRepository.countByCompany(company.get());
+
+        if (currentRoomCount >= company.get().getTotalRoomNumber()) {
+            throw new RuntimeException("Toplam oda sayısı sınırı aşıldı. Maksimum izin verilen oda sayısı: " + company.get().getTotalRoomNumber());
+        }
+        room.setCompany(company.get());
         roomRepository.save(room);
     }
 
@@ -46,12 +52,23 @@ public class RoomService {
         roomRepository.save(existingRoom);
     }
 
-    public Room getRoomById(Long id) {
-        return roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+    public RoomDto getRoomById(Long id) {
+        Room room = roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+        return roomMapper.toDto(room);
     }
 
-    public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+    public List<RoomDto> getAllRooms() {
+        return roomRepository.findAllWithReservations().stream().map(roomMapper::toDto).toList();
+    }
+
+    // Boş odaları al; companyId verilmişse sadece o işletmeye ait uygun odalar döner
+    public List<RoomDto> getAvailableRooms(LocalDateTime checkInDate, LocalDateTime checkOutDate, Long companyId) {
+            return roomRepository.findAvailableRoomsByCompanyId(checkInDate, checkOutDate, companyId).stream().map(roomMapper::toDto).toList();
+    }
+
+    // CompanyId'ye göre tüm odaları getir
+    public List<RoomDto> getAllRoomsByCompanyId(Long companyId) {
+        return roomRepository.findAllByCompanyIdWithReservations(companyId).stream().map(roomMapper::toDto).toList();
     }
 }
 

@@ -1,5 +1,6 @@
 package com.tys.service;
 
+import com.tys.dto.CafeDto;
 import com.tys.mapper.CafeMapper;
 import com.tys.model.Cafe;
 import com.tys.repository.CafeRepository;
@@ -8,6 +9,8 @@ import com.tys.request.DeleteCafeRequest;
 import com.tys.request.UpdateCafeRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,13 +32,20 @@ public class CafeService {
     }
 
     public void updateCafe(UpdateCafeRequest request) {
-        Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
+        /*Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
         cafeMapper.updateExistingCafeWithCafeRequest(request, existingCafe);
-        cafeRepository.save(existingCafe);
+        cafeRepository.save(existingCafe);*/
     }
 
     public Cafe getCafeById(Long id) {
         return cafeRepository.findById(id).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + id));
+    }
+
+    public List<CafeDto> getAllCafeItems(Long companyId) {
+        return cafeRepository.findAllByCompanyId(companyId)
+                .stream()
+                .map(cafeMapper::toDto)
+                .toList();
     }
 
 }

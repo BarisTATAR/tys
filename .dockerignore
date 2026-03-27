@@ -1,0 +1,19 @@
+# Build ve IDE
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+bin/
+out/
+.idea/
+*.iml
+.vscode/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Diğer
+*.md
+Dockerfile
+.dockerignore
