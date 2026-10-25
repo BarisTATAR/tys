@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-20T16:20:27+0300",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-10-03T19:31:26+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class CompanyMapperImpl implements CompanyMapper {
@@ -46,18 +46,45 @@ public class CompanyMapperImpl implements CompanyMapper {
             return;
         }
 
-        existingCompany.setAddress( updateCompanyRequest.getAddress() );
-        existingCompany.setCategory( updateCompanyRequest.getCategory() );
-        existingCompany.setElectricChargeStation( updateCompanyRequest.getElectricChargeStation() );
-        existingCompany.setEmail( updateCompanyRequest.getEmail() );
-        existingCompany.setFacilityNumber( updateCompanyRequest.getFacilityNumber() );
-        existingCompany.setGoogleCommentsUrl( updateCompanyRequest.getGoogleCommentsUrl() );
-        existingCompany.setId( updateCompanyRequest.getId() );
-        existingCompany.setName( updateCompanyRequest.getName() );
-        existingCompany.setPhoneNumber( updateCompanyRequest.getPhoneNumber() );
-        existingCompany.setStartYear( updateCompanyRequest.getStartYear() );
-        existingCompany.setTaxNumber( updateCompanyRequest.getTaxNumber() );
-        existingCompany.setTotalRoomNumber( updateCompanyRequest.getTotalRoomNumber() );
+        if ( updateCompanyRequest.getAddress() != null ) {
+            existingCompany.setAddress( updateCompanyRequest.getAddress() );
+        }
+        if ( updateCompanyRequest.getCategory() != null ) {
+            existingCompany.setCategory( updateCompanyRequest.getCategory() );
+        }
+        if ( updateCompanyRequest.getElectricChargeStation() != null ) {
+            existingCompany.setElectricChargeStation( updateCompanyRequest.getElectricChargeStation() );
+        }
+        if ( updateCompanyRequest.getEmail() != null ) {
+            existingCompany.setEmail( updateCompanyRequest.getEmail() );
+        }
+        if ( updateCompanyRequest.getFacilityNumber() != null ) {
+            existingCompany.setFacilityNumber( updateCompanyRequest.getFacilityNumber() );
+        }
+        if ( updateCompanyRequest.getGoogleCommentsUrl() != null ) {
+            existingCompany.setGoogleCommentsUrl( updateCompanyRequest.getGoogleCommentsUrl() );
+        }
+        if ( updateCompanyRequest.getId() != null ) {
+            existingCompany.setId( updateCompanyRequest.getId() );
+        }
+        if ( updateCompanyRequest.getName() != null ) {
+            existingCompany.setName( updateCompanyRequest.getName() );
+        }
+        if ( updateCompanyRequest.getPassword() != null ) {
+            existingCompany.setPassword( updateCompanyRequest.getPassword() );
+        }
+        if ( updateCompanyRequest.getPhoneNumber() != null ) {
+            existingCompany.setPhoneNumber( updateCompanyRequest.getPhoneNumber() );
+        }
+        if ( updateCompanyRequest.getStartYear() != null ) {
+            existingCompany.setStartYear( updateCompanyRequest.getStartYear() );
+        }
+        if ( updateCompanyRequest.getTaxNumber() != null ) {
+            existingCompany.setTaxNumber( updateCompanyRequest.getTaxNumber() );
+        }
+        if ( updateCompanyRequest.getTotalRoomNumber() != null ) {
+            existingCompany.setTotalRoomNumber( updateCompanyRequest.getTotalRoomNumber() );
+        }
     }
 
     @Override

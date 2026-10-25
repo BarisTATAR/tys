@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-20T16:20:26+0300",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-10-03T19:31:25+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class RoomMapperImpl implements RoomMapper {
@@ -143,8 +143,12 @@ public class RoomMapperImpl implements RoomMapper {
 
         reservationDto.setAdultGuestNumber( reservation.getAdultGuestNumber() );
         reservationDto.setBabyGuestNumber( reservation.getBabyGuestNumber() );
-        reservationDto.setCheckInDate( reservation.getCheckInDate() );
-        reservationDto.setCheckOutDate( reservation.getCheckOutDate() );
+        if ( reservation.getCheckInDate() != null ) {
+            reservationDto.setCheckInDate( reservation.getCheckInDate().toLocalDate() );
+        }
+        if ( reservation.getCheckOutDate() != null ) {
+            reservationDto.setCheckOutDate( reservation.getCheckOutDate().toLocalDate() );
+        }
         reservationDto.setChildGuestNumber( reservation.getChildGuestNumber() );
         reservationDto.setId( reservation.getId() );
         reservationDto.setPaymentList( paymentListToPaymentDtoList( reservation.getPaymentList() ) );

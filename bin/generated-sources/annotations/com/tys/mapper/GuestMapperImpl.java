@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-20T16:20:26+0300",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-10-03T19:31:25+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class GuestMapperImpl implements GuestMapper {
@@ -49,30 +49,39 @@ public class GuestMapperImpl implements GuestMapper {
             return;
         }
 
-        existingGuest.setAddress( updateGuestRequest.getAddress() );
-        if ( updateGuestRequest.getCheckInDate() != null ) {
-            existingGuest.setCheckInDate( updateGuestRequest.getCheckInDate().atStartOfDay() );
+        if ( updateGuestRequest.getAddress() != null ) {
+            existingGuest.setAddress( updateGuestRequest.getAddress() );
         }
-        else {
-            existingGuest.setCheckInDate( null );
+        if ( updateGuestRequest.getCountryCode() != null ) {
+            existingGuest.setCountryCode( updateGuestRequest.getCountryCode() );
         }
-        if ( updateGuestRequest.getCheckOutDate() != null ) {
-            existingGuest.setCheckOutDate( updateGuestRequest.getCheckOutDate().atStartOfDay() );
+        if ( updateGuestRequest.getEmail() != null ) {
+            existingGuest.setEmail( updateGuestRequest.getEmail() );
         }
-        else {
-            existingGuest.setCheckOutDate( null );
+        if ( updateGuestRequest.getGuestUsageType() != null ) {
+            existingGuest.setGuestUsageType( updateGuestRequest.getGuestUsageType() );
         }
-        existingGuest.setCountryCode( updateGuestRequest.getCountryCode() );
-        existingGuest.setEmail( updateGuestRequest.getEmail() );
-        existingGuest.setGuestUsageType( updateGuestRequest.getGuestUsageType() );
-        existingGuest.setId( updateGuestRequest.getId() );
-        existingGuest.setIdentityNumber( updateGuestRequest.getIdentityNumber() );
-        existingGuest.setJob( updateGuestRequest.getJob() );
-        existingGuest.setName( updateGuestRequest.getName() );
-        existingGuest.setPhoneNumber( updateGuestRequest.getPhoneNumber() );
-        existingGuest.setPlateNumber( updateGuestRequest.getPlateNumber() );
-        existingGuest.setShortStay( updateGuestRequest.getShortStay() );
-        existingGuest.setSurname( updateGuestRequest.getSurname() );
+        if ( updateGuestRequest.getIdentityNumber() != null ) {
+            existingGuest.setIdentityNumber( updateGuestRequest.getIdentityNumber() );
+        }
+        if ( updateGuestRequest.getJob() != null ) {
+            existingGuest.setJob( updateGuestRequest.getJob() );
+        }
+        if ( updateGuestRequest.getName() != null ) {
+            existingGuest.setName( updateGuestRequest.getName() );
+        }
+        if ( updateGuestRequest.getPhoneNumber() != null ) {
+            existingGuest.setPhoneNumber( updateGuestRequest.getPhoneNumber() );
+        }
+        if ( updateGuestRequest.getPlateNumber() != null ) {
+            existingGuest.setPlateNumber( updateGuestRequest.getPlateNumber() );
+        }
+        if ( updateGuestRequest.getShortStay() != null ) {
+            existingGuest.setShortStay( updateGuestRequest.getShortStay() );
+        }
+        if ( updateGuestRequest.getSurname() != null ) {
+            existingGuest.setSurname( updateGuestRequest.getSurname() );
+        }
     }
 
     @Override

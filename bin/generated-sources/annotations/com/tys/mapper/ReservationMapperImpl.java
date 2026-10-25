@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-20T16:20:26+0300",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-10-03T19:31:25+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class ReservationMapperImpl implements ReservationMapper {
@@ -38,8 +38,6 @@ public class ReservationMapperImpl implements ReservationMapper {
 
         reservation.setAdultGuestNumber( createReservationRequest.getAdultGuestNumber() );
         reservation.setBabyGuestNumber( createReservationRequest.getBabyGuestNumber() );
-        reservation.setCheckInDate( createReservationRequest.getCheckInDate() );
-        reservation.setCheckOutDate( createReservationRequest.getCheckOutDate() );
         reservation.setChildGuestNumber( createReservationRequest.getChildGuestNumber() );
         reservation.setCompany( createReservationRequest.getCompany() );
         reservation.setPaymentList( createPaymentRequestListToPaymentList( createReservationRequest.getPaymentList() ) );
@@ -48,59 +46,37 @@ public class ReservationMapperImpl implements ReservationMapper {
         reservation.setReservationStatus( createReservationRequest.getReservationStatus() );
         reservation.setReservationType( createReservationRequest.getReservationType() );
 
+        reservation.setCheckInDate( com.tys.util.ReservationDateUtils.toStartOfDay(createReservationRequest.getCheckInDate()) );
+        reservation.setCheckOutDate( com.tys.util.ReservationDateUtils.toStartOfDay(createReservationRequest.getCheckOutDate()) );
+
         linkPayment( reservation );
 
         return reservation;
     }
 
     @Override
-    public void updateExistingReservationWithReservationRequest(UpdateReservationRequest updateReservationRequest, Reservation existingrReservation) {
+    public void updateExistingReservationWithReservationRequest(UpdateReservationRequest updateReservationRequest, Reservation existingReservation) {
         if ( updateReservationRequest == null ) {
             return;
         }
 
-        existingrReservation.setAdultGuestNumber( updateReservationRequest.getAdultGuestNumber() );
-        existingrReservation.setBabyGuestNumber( updateReservationRequest.getBabyGuestNumber() );
-        existingrReservation.setCheckInDate( updateReservationRequest.getCheckInDate() );
-        existingrReservation.setCheckOutDate( updateReservationRequest.getCheckOutDate() );
-        existingrReservation.setChildGuestNumber( updateReservationRequest.getChildGuestNumber() );
-        if ( existingrReservation.getGuests() != null ) {
-            List<Guest> list = updateReservationRequest.getGuests();
-            if ( list != null ) {
-                existingrReservation.getGuests().clear();
-                existingrReservation.getGuests().addAll( list );
-            }
-            else {
-                existingrReservation.setGuests( null );
-            }
+        if ( updateReservationRequest.getAdultGuestNumber() != null ) {
+            existingReservation.setAdultGuestNumber( updateReservationRequest.getAdultGuestNumber() );
         }
-        else {
-            List<Guest> list = updateReservationRequest.getGuests();
-            if ( list != null ) {
-                existingrReservation.setGuests( new ArrayList<Guest>( list ) );
-            }
+        if ( updateReservationRequest.getBabyGuestNumber() != null ) {
+            existingReservation.setBabyGuestNumber( updateReservationRequest.getBabyGuestNumber() );
         }
-        existingrReservation.setId( updateReservationRequest.getId() );
-        if ( existingrReservation.getPaymentList() != null ) {
-            List<Payment> list1 = updateReservationRequest.getPaymentList();
-            if ( list1 != null ) {
-                existingrReservation.getPaymentList().clear();
-                existingrReservation.getPaymentList().addAll( list1 );
-            }
-            else {
-                existingrReservation.setPaymentList( null );
-            }
+        if ( updateReservationRequest.getChildGuestNumber() != null ) {
+            existingReservation.setChildGuestNumber( updateReservationRequest.getChildGuestNumber() );
         }
-        else {
-            List<Payment> list1 = updateReservationRequest.getPaymentList();
-            if ( list1 != null ) {
-                existingrReservation.setPaymentList( new ArrayList<Payment>( list1 ) );
-            }
+        if ( updateReservationRequest.getReservationStatus() != null ) {
+            existingReservation.setReservationStatus( updateReservationRequest.getReservationStatus() );
         }
-        existingrReservation.setReservationStatus( updateReservationRequest.getReservationStatus() );
-        existingrReservation.setReservationType( updateReservationRequest.getReservationType() );
+        if ( updateReservationRequest.getReservationType() != null ) {
+            existingReservation.setReservationType( updateReservationRequest.getReservationType() );
+        }
 
-        linkPayment( existingrReservation );
+        linkPayment( existingReservation );
     }
 
     @Override
@@ -112,17 +88,19 @@ public class ReservationMapperImpl implements ReservationMapper {
         ReservationDto reservationDto = new ReservationDto();
 
         reservationDto.setGuestList( guestListToGuestDtoList( reservation.getGuests() ) );
+        reservationDto.setRoomList( roomsToSimpleRoomList( reservation.getRooms() ) );
+        reservationDto.setPaymentList( paymentListToPaymentDtoList( reservation.getPaymentList() ) );
         reservationDto.setAdultGuestNumber( reservation.getAdultGuestNumber() );
         reservationDto.setBabyGuestNumber( reservation.getBabyGuestNumber() );
-        reservationDto.setCheckInDate( reservation.getCheckInDate() );
-        reservationDto.setCheckOutDate( reservation.getCheckOutDate() );
         reservationDto.setChildGuestNumber( reservation.getChildGuestNumber() );
         reservationDto.setId( reservation.getId() );
-        reservationDto.setPaymentList( paymentListToPaymentDtoList( reservation.getPaymentList() ) );
         reservationDto.setReservationDate( reservation.getReservationDate() );
         reservationDto.setReservationMessage( reservation.getReservationMessage() );
         reservationDto.setReservationStatus( reservation.getReservationStatus() );
         reservationDto.setReservationType( reservation.getReservationType() );
+
+        reservationDto.setCheckInDate( com.tys.util.ReservationDateUtils.toLocalDate(reservation.getCheckInDate()) );
+        reservationDto.setCheckOutDate( com.tys.util.ReservationDateUtils.toLocalDate(reservation.getCheckOutDate()) );
 
         return reservationDto;
     }
