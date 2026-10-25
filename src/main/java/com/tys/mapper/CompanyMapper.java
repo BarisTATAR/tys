@@ -11,6 +11,8 @@ import org.mapstruct.*;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CompanyMapper {
     Company createCompanyRequestToEntity(CreateCompanyRequest createCompanyRequest);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateExistingCompanyWithCompanyRequest(UpdateCompanyRequest updateCompanyRequest, @MappingTarget Company existingCompany);
 
     CompanyDto toDto(Company company);

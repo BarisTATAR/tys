@@ -1,5 +1,8 @@
 package com.tys.service;
 
+import com.tys.domain.company.CompanyRoomCountRule;
+import com.tys.domain.company.CompanyTssCodeUniquenessRule;
+import com.tys.domain.company.CompanyUsernameUniquenessRule;
 import com.tys.dto.CompanyDto;
 import com.tys.mapper.CompanyMapper;
 import com.tys.model.Company;
@@ -23,8 +26,13 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
     private final JwtService jwtService;
+    private final CompanyUsernameUniquenessRule companyUsernameUniquenessRule;
+    private final CompanyTssCodeUniquenessRule companyTssCodeUniquenessRule;
+    private final CompanyRoomCountRule companyRoomCountRule;
 
     public void createCompany(CreateCompanyRequest request) {
+        companyUsernameUniquenessRule.assertAvailable(request.getUsername(), null);
+        companyTssCodeUniquenessRule.assertAvailable(request.getFacilityNumber(), null);
         Company company = companyMapper.createCompanyRequestToEntity(request);
         companyRepository.save(company);
     }
@@ -51,7 +59,10 @@ public class CompanyService {
     }
 
     public void updateCompany(UpdateCompanyRequest request) {
-        Company existingCompany = companyRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Company not found with Id: " + request.getId()));
+        Company existingCompany = companyRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found with Id: " + request.getId()));
+        companyRoomCountRule.assertTotalRoomNumberNotBelowRegistered(existingCompany, request.getTotalRoomNumber());
+        companyTssCodeUniquenessRule.assertAvailable(request.getFacilityNumber(), request.getId());
         companyMapper.updateExistingCompanyWithCompanyRequest(request, existingCompany);
         companyRepository.save(existingCompany);
     }
@@ -72,7 +83,6 @@ public class CompanyService {
         if (companyPassword == null || !companyPassword.equals(request.getPassword())) {
             return new LoginResponse(false, errorMessage, null);
         }
-
 
         // JWT oluştur (companyId claim ile)
         String token = jwtService.generateToken(company.getId());

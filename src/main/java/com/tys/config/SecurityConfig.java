@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers("/company/admin_login", "/company/admin_login/").permitAll()
                         .requestMatchers("/admin/login", "/admin/login/").permitAll()
                         .requestMatchers("/company/create", "/company/create/").permitAll()
+                        // Misafir kurallar onay sayfası (JWT yok)
+                        .requestMatchers(new AntPathRequestMatcher("/public/**")).permitAll()
                         // Aşağıdaki tüm path'ler JWT gerektirir (Ant matcher kullanımı)
                         .requestMatchers(new AntPathRequestMatcher("/company/**")).authenticated()
                         .requestMatchers(new AntPathRequestMatcher("/cafe/**")).authenticated()

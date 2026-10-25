@@ -14,11 +14,21 @@ import java.util.Optional;
 public interface GuestRepository extends JpaRepository<Guest, Long> {
     Optional<Guest> findByIdentityNumber(String identityNumber);
 
+    boolean existsByIdentityNumber(String identityNumber);
+
     @Query("SELECT g FROM Guest g WHERE g.checkInDate BETWEEN :start AND :end")
     List<Guest> findAllByCheckInYear(@Param("start") LocalDateTime start,
                                      @Param("end") LocalDateTime end);
 
-    @Query("SELECT g FROM Guest g WHERE g.company.id = :companyId AND g.checkInDate BETWEEN :start AND :end")
+    @Query("""
+            SELECT DISTINCT g FROM Guest g
+            LEFT JOIN g.reservations r
+            WHERE (g.company.id = :companyId OR r.company.id = :companyId)
+            AND (
+                g.checkInDate BETWEEN :start AND :end
+                OR r.checkInDate BETWEEN :start AND :end
+            )
+            """)
     List<Guest> findAllByCheckInYearAndCompanyId(@Param("start") LocalDateTime start,
                                                  @Param("end") LocalDateTime end,
                                                  @Param("companyId") Long companyId);
@@ -26,5 +36,13 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     @Query("SELECT DISTINCT g FROM Guest g LEFT JOIN g.reservations r " +
            "WHERE g.company.id = :companyId OR r.company.id = :companyId")
     List<Guest> findAllByCompanyId(@Param("companyId") Long companyId);
+
+    @Query("""
+            SELECT DISTINCT g FROM Guest g
+            LEFT JOIN FETCH g.reservations r
+            LEFT JOIN FETCH r.company
+            WHERE g.company.id = :companyId OR r.company.id = :companyId
+            """)
+    List<Guest> findAllByCompanyIdWithReservations(@Param("companyId") Long companyId);
 
 }

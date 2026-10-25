@@ -14,6 +14,14 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     Optional<Company> findByName(String name);
 
+    boolean existsByUsernameIgnoreCase(String username);
+
+    boolean existsByFacilityNumberIgnoreCase(String facilityNumber);
+
+    boolean existsByUsernameIgnoreCaseAndIdNot(String username, Long id);
+
+    boolean existsByFacilityNumberIgnoreCaseAndIdNot(String facilityNumber, Long id);
+
     @Query("select c.name from Company c")
     List<String> findAllCompanyNames();
 }

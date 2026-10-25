@@ -8,88 +8,133 @@ import com.tys.model.ReservationCafeItem;
 import com.tys.repository.CafeRepository;
 import com.tys.repository.ReservationCafeItemRepository;
 import com.tys.repository.ReservationRepository;
+import com.tys.request.UpdateReservationCafeItemRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationCafeItemService {
+
     private final ReservationRepository reservationRepository;
     private final CafeRepository cafeRepository;
     private final ReservationCafeItemRepository reservationCafeItemRepository;
     private final ReservationCafeItemMapper mapper;
 
+    @Transactional
     public ReservationCafeItemDto addCafeItemToReservation(ReservationCafeItemDto dto) {
-
         Reservation reservation = reservationRepository.findById(dto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Rezervasyon bulunamadı"));
 
         Cafe cafe = cafeRepository.findById(dto.getCafeId())
                 .orElseThrow(() -> new RuntimeException("Cafe ürünü bulunamadı"));
 
-        // Yeni item oluştur
-        ReservationCafeItem item = mapper.toEntity(dto, reservation, cafe);
-
-        // Rezervasyonun cafeItems listesine ekle
-        reservation.getCafeItems().add(item);
-
-        // Kalemi kaydet (cascade açıksa rezervasyon kaydında da kayıt olur)
-        reservationCafeItemRepository.save(item);
-
-        return mapper.toDto(item);
-    }
-
-    public BigDecimal getReservationCafeAmountByReservationId(Long reservationId) {
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        List<ReservationCafeItem> items = reservationCafeItemRepository.findAllByReservationId(reservationId);
-
-        if (items.isEmpty()) {
-            return totalAmount;        }
-
-        for (ReservationCafeItem item : items) {
-            // Cafe kaydını çek
-            Optional<Cafe> cafeOptional = cafeRepository.findById(item.getCafe().getId());
-
-            if (cafeOptional.isPresent()) {
-                Cafe cafe = cafeOptional.get();
-
-                // count ve price BigDecimal olarak hazırlanır
-                BigDecimal count = BigDecimal.valueOf(item.getCount());
-                BigDecimal price = cafe.getPrice(); // BigDecimal türünde olmalı
-
-                // item toplamı = price * count
-                BigDecimal itemTotal = price.multiply(count);
-
-                // totalAmount üzerine ekleme (kümülatif toplama)
-                totalAmount = totalAmount.add(itemTotal);
-
-            } else {
-                throw new RuntimeException("Cafe bulunamadı: " + item.getId());
-            }
+        int addCount = dto.getCount() != null ? dto.getCount() : 0;
+        if (addCount <= 0) {
+            throw new IllegalArgumentException("Cafe adedi 0'dan büyük olmalıdır.");
         }
-        //hesap yap
-        return totalAmount;
 
+        // Aynı ürün rezervasyonda varsa adedi artır; yoksa yeni satır ekle
+        ReservationCafeItem item = reservationCafeItemRepository
+                .findByReservation_IdAndCafe_Id(dto.getReservationId(), dto.getCafeId())
+                .map(existing -> {
+                    int current = existing.getCount() != null ? existing.getCount() : 0;
+                    existing.setCount(current + addCount);
+                    return existing;
+                })
+                .orElseGet(() -> mapper.toEntity(dto, reservation, cafe));
+
+        ReservationCafeItem saved = reservationCafeItemRepository.save(item);
+        return mapper.toDto(saved);
     }
 
-    public Map<String, Integer> getReservationCafeItemListByReservationId(Long reservationId) {
-        List<ReservationCafeItem> items = reservationCafeItemRepository.findAllByReservationId(reservationId);
+    /**
+     * Hesap ekranından tek bir cafe kaleminin adedini günceller.
+     * count &lt;= 0 ise kalem silinir (null döner).
+     */
+    @Transactional
+    public ReservationCafeItemDto updateCafeItemCount(UpdateReservationCafeItemRequest request) {
+        ReservationCafeItem item = findItemForUpdate(request);
 
-        if (items.isEmpty()) {
+        Integer newCount = request.getCount();
+        if (newCount == null || newCount <= 0) {
+            reservationCafeItemRepository.delete(item);
+            return null;
+        }
+
+        item.setCount(newCount);
+        return mapper.toDto(reservationCafeItemRepository.save(item));
+    }
+
+    /**
+     * Hesap ekranındaki Güncelle butonu: rezervasyona ait birden fazla cafe adedini bir kerede günceller.
+     */
+    @Transactional
+    public List<ReservationCafeItemDto> updateCafeItemCounts(Long reservationId, List<UpdateReservationCafeItemRequest> requests) {
+        if (!reservationRepository.existsById(reservationId)) {
             throw new RuntimeException("Rezervasyon bulunamadı");
         }
-
-        Map<String, Integer> cafeCountMap = new HashMap<>();
-        for (ReservationCafeItem cafeItem: items) {
-            cafeCountMap.put(cafeItem.getCafe().getName(), cafeItem.getCount());
+        if (requests == null || requests.isEmpty()) {
+            return getReservationCafeItemDetailsByReservationId(reservationId);
         }
 
-        return  cafeCountMap;
+        for (UpdateReservationCafeItemRequest request : requests) {
+            request.setReservationId(reservationId);
+            updateCafeItemCount(request);
+        }
+        return getReservationCafeItemDetailsByReservationId(reservationId);
+    }
+
+    private ReservationCafeItem findItemForUpdate(UpdateReservationCafeItemRequest request) {
+        if (request.getId() != null) {
+            return reservationCafeItemRepository.findById(request.getId())
+                    .orElseThrow(() -> new RuntimeException("Cafe kalemi bulunamadı: " + request.getId()));
+        }
+        if (request.getReservationId() == null || request.getCafeId() == null) {
+            throw new IllegalArgumentException("Güncelleme için id veya reservationId + cafeId zorunludur.");
+        }
+        return reservationCafeItemRepository
+                .findByReservation_IdAndCafe_Id(request.getReservationId(), request.getCafeId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Bu rezervasyonda cafe ürünü bulunamadı. reservationId="
+                                + request.getReservationId() + ", cafeId=" + request.getCafeId()));
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getReservationCafeAmountByReservationId(Long reservationId) {
+        return getReservationCafeItemDetailsByReservationId(reservationId).stream()
+                .map(ReservationCafeItemDto::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Ürün adına göre adetleri toplar (aynı ürün birden fazla satırdaysa ezilmez).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getReservationCafeItemListByReservationId(Long reservationId) {
+        Map<String, Integer> cafeCountMap = new HashMap<>();
+
+        for (ReservationCafeItemDto item : getReservationCafeItemDetailsByReservationId(reservationId)) {
+            if (item.getCafeName() == null || item.getCafeName().isBlank()) {
+                continue;
+            }
+            int count = item.getCount() != null ? item.getCount() : 0;
+            cafeCountMap.merge(item.getCafeName(), count, Integer::sum);
+        }
+
+        return cafeCountMap;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationCafeItemDto> getReservationCafeItemDetailsByReservationId(Long reservationId) {
+        return reservationCafeItemRepository.findAllByReservation_Id(reservationId).stream()
+                .map(mapper::toDto)
+                .toList();
     }
 }

@@ -43,23 +43,32 @@ public class PaymentService {
 
     public PaymentDto getPaymentByReservationId(Long id) {
         List<Payment> payments = paymentRepository.findAllByReservationId(id);
-        Payment payment = new Payment();
+        PaymentDto dto = new PaymentDto();
+        dto.setReservationId(id);
 
         if (payments.isEmpty()) {
-            throw new RuntimeException("No payments found for reservationId: " + id);
-        } else {
-            payment.setAmount(payments.get(0).getAmount());
-            payment.setAdvancePayment(payments.get(0).getAdvancePayment());
-            BigDecimal paidAmount = payments.get(0).getAdvancePayment();
-            for (Payment p : payments) {
-                if (p.getPaidAmount() != null) {
-                    paidAmount = paidAmount.add(p.getPaidAmount());
-                }
-            }
-            payment.setPaidAmount(paidAmount);
+            dto.setAmount(BigDecimal.ZERO);
+            dto.setAdvancePayment(BigDecimal.ZERO);
+            dto.setPaidAmount(BigDecimal.ZERO);
+            return dto;
         }
 
-        return paymentMapper.toDto(payment);
+        Payment first = payments.get(0);
+        dto.setId(first.getId());
+        dto.setAmount(first.getAmount() != null ? first.getAmount() : BigDecimal.ZERO);
+        dto.setAdvancePayment(first.getAdvancePayment() != null ? first.getAdvancePayment() : BigDecimal.ZERO);
+        dto.setAdvancePaymentType(first.getAdvancePaymentType());
+        dto.setClosePaymentType(first.getClosePaymentType());
+        dto.setPaymentDate(first.getPaymentDate());
+
+        BigDecimal paidAmount = dto.getAdvancePayment();
+        for (Payment p : payments) {
+            if (p.getPaidAmount() != null) {
+                paidAmount = paidAmount.add(p.getPaidAmount());
+            }
+        }
+        dto.setPaidAmount(paidAmount);
+        return dto;
     }
 
     public BigDecimal getPayments(LocalDate startDate, LocalDate endDate, PaymentType paymentType, Long companyId) {

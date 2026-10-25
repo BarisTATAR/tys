@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TYS — Yetenekler & Yetkiler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1a17;
+      --bg-elev: #16241f;
+      --panel: #1c2e28;
+      --ink: #f2f5f1;
+      --muted: #a7b5ae;
+      --line: rgba(242, 245, 241, 0.12);
+      --accent: #c6a75e;
+      --accent-soft: rgba(198, 167, 94, 0.16);
+      --teal: #3d8f7a;
+      --danger: #d76a5b;
+      --ok: #6fbf8f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Sora", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, rgba(61, 143, 122, 0.22), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(198, 167, 94, 0.12), transparent 50%),
+        linear-gradient(180deg, #0f1a17 0%, #121f1b 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .deck {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      width: 100%;
+    }
+
+    .slide {
+      display: none;
+      height: 100%;
+      padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 4.5rem);
+      flex-direction: column;
+      justify-content: center;
+      animation: rise 420ms ease;
+    }
+
+    .slide.active { display: flex; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow {
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+    }
+
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(2.4rem, 6vw, 4.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      max-width: 14ch;
+    }
+
+    h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+      line-height: 1.15;
+      margin-bottom: 0.4rem;
+    }
+
+    .lead {
+      margin-top: 1.1rem;
+      font-size: clamp(1rem, 1.5vw, 1.25rem);
+      color: var(--muted);
+      max-width: 42rem;
+      line-height: 1.55;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1.6rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 1.4rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.4rem;
+    }
+
+    @media (max-width: 960px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      body { overflow: auto; }
+      .slide { min-height: 100%; height: auto; padding-bottom: 5rem; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.15rem 1.2rem;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
+      color: var(--ink);
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .card ul { padding-left: 1.1rem; }
+    .card li + li { margin-top: 0.28rem; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1.8rem;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.8rem;
+    }
+
+    @media (max-width: 960px) {
+      .stat-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .stat {
+      border-top: 2px solid var(--accent);
+      padding-top: 0.85rem;
+    }
+
+    .stat strong {
+      display: block;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 2rem;
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1.3rem;
+      align-items: center;
+    }
+
+    .flow .step {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.86rem;
+      font-weight: 500;
+    }
+
+    .flow .arrow {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    table.matrix {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.2rem;
+      font-size: 0.88rem;
+    }
+
+    table.matrix th,
+    table.matrix td {
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    table.matrix th {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    table.matrix td { color: var(--muted); }
+    table.matrix td:first-child { color: var(--ink); font-weight: 500; }
+
+    .badge {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-ok { background: rgba(111, 191, 143, 0.18); color: var(--ok); }
+    .badge-pub { background: rgba(61, 143, 122, 0.2); color: #7dceb8; }
+    .badge-auth { background: var(--accent-soft); color: var(--accent); }
+    .badge-warn { background: rgba(215, 106, 91, 0.18); color: #e8a095; }
+
+    .nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1.5rem;
+      background: linear-gradient(180deg, transparent, rgba(15, 26, 23, 0.92) 35%);
+      backdrop-filter: blur(6px);
+    }
+
+    .nav button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.55rem 1rem;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav button:hover { border-color: var(--accent); color: var(--accent); }
+    .nav button:disabled { opacity: 0.35; cursor: default; }
+
+    .progress {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+    }
+
+    .brand-mark {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(3.5rem, 10vw, 7rem);
+      color: var(--accent);
+      line-height: 0.9;
+      margin-bottom: 0.6rem;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.5rem;
+      margin-top: 1.4rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .list-tight { margin-top: 0.9rem; }
+    .list-tight li {
+      color: var(--muted);
+      margin: 0.45rem 0;
+      padding-left: 0.2rem;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .hint {
+      margin-top: 1.4rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .accent-bar {
+      width: 3.2rem;
+      height: 3px;
+      background: var(--accent);
+      margin: 0.9rem 0 1.1rem;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- 1 -->
+    <section class="slide active" data-title="Kapak">
+      <div class="brand-mark">TYS</div>
+      <p class="eyebrow">Tesis Yönetim Sistemi</p>
+      <h1>Konaklama operasyonunu tek ekranda yönetin</h1>
+      <p class="lead">
+        Rezervasyon, oda tahtası, misafir, cafe hesabı, ödeme, SMS ve işletme kuralları onayını
+        çok tesisli yapıda bir araya getiren operasyon platformu.
+      </p>
+      <div class="hero-meta">
+        <span class="pill">İşletme + Admin</span>
+        <span class="pill">JWT güvenliği</span>
+        <span class="pill">KBS &amp; SMS hazır</span>
+        <span class="pill">Türkiye konaklama odaklı</span>
+      </div>
+      <p class="hint">← → veya boşluk ile ilerleyin · F ile tam ekran</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-title="Kimlik">
+      <p class="eyebrow">Ürün kimliği</p>
+      <h2>TYS nedir?</h2>
+      <div class="accent-bar"></div>
+      <p class="lead">
+        Otel, pansiyon, bungalov ve motel gibi tesisler için çok kiracılı (multi-tenant)
+        ön büro ve operasyon sistemi. Her işletme kendi verisiyle çalışır; platform yöneticisi tesisleri yönetir.
+      </p>
+      <div class="stat-row">
+        <div class="stat"><strong>2</strong><span>Operatör tipi<br/>İşletme &amp; Admin</span></div>
+        <div class="stat"><strong>10+</strong><span>Operasyon modülü<br/>Rezervasyondan SMS’e</span></div>
+        <div class="stat"><strong>4</strong><span>Rezervasyon durumu<br/>Girişten çıkışa</span></div>
+        <div class="stat"><strong>30dk</strong><span>JWT oturum süresi<br/>Stateless güvenlik</span></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-title="Roller">
+      <p class="eyebrow">Kullanıcı rolleri</p>
+      <h2>Kim ne için kullanır?</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>İşletme kullanıcısı · ROLE_COMPANY</h3>
+          <p>Günlük tesis operasyonu.</p>
+          <ul style="margin-top:0.7rem">
+            <li>Ana ekran oda tahtası</li>
+            <li>Rezervasyon oluşturma / güncelleme</li>
+            <li>Misafir kayıtları ve Excel import</li>
+            <li>Cafe menü ve oda hesabı</li>
+            <li>Ödeme alma ve checkout kontrolü</li>
+            <li>İşletme kuralları yükleme ve SMS onayı</li>
+          </ul>
+          <p style="margin-top:0.8rem"><span class="badge badge-auth">/company/login</span></p>
+        </div>
+        <div class="card">
+          <h3>Platform admin · ROLE_ADMIN</h3>
+          <p>Tesis envanteri ve kurulum.</p>
+          <ul style="margin-top:0.7rem">
+            <li>İşletme ekleme ve listeleme</li>
+            <li>İşletme / oda güncelleme</li>
+            <li>Oda ekleme</li>
+            <li>Tüm tesislerin merkezi yönetimi</li>
+          </ul>
+          <p style="margin-top:0.8rem"><span class="badge badge-auth">/admin/login</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-title="Modüller">
+      <p class="eyebrow">Yetenek haritası</p>
+      <h2>İşletme modülleri</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-3">
+        <div class="card"><h3>Ana Ekran</h3><p>Tarihe göre oda tahtası, renkli doluluk, sağ tık aksiyonları, detaylı hesap.</p></div>
+        <div class="card"><h3>Rezervasyonlar</h3><p>Yeni rezervasyon, liste, güncelleme, oda ekle/çıkar, misafir yönetimi.</p></div>
+        <div class="card"><h3>Misafirler</h3><p>Liste, ekleme, güncelleme, geçmiş misafirler, Excel ile toplu kayıt.</p></div>
+        <div class="card"><h3>Cafe / Bar</h3><p>Ürün kataloğu; rezervasyona hesap kalemi ekleme ve çıkarma.</p></div>
+        <div class="card"><h3>Ödemeler</h3><p>Nakit, kredi ve banka kartı; avans ve tahsilat takibi.</p></div>
+        <div class="card"><h3>Kurallar &amp; SMS</h3><p>Word kurallar dosyası, SMS ile onay linki, misafir onay sayfası.</p></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-title="Ana Ekran">
+      <p class="eyebrow">Operasyon kalbi</p>
+      <h2>Ana Ekran oda tahtası</h2>
+      <div class="accent-bar"></div>
+      <div class="two-col">
+        <div>
+          <p class="lead" style="margin-top:0">Seçili güne göre tüm odalar kat bazında. Durum renkleri operatörün saniyeler içinde karar vermesini sağlar.</p>
+          <ul class="list-tight">
+            <li><strong style="color:var(--ink)">Müsait</strong> — boş oda</li>
+            <li><strong style="color:var(--ink)">Rezarvasyonlu</strong> — rezervasyon var, henüz check-in yok</li>
+            <li><strong style="color:var(--ink)">Dolu</strong> — check-in yapılmış</li>
+            <li><strong style="color:var(--ink)">Ayrılacak</strong> — çıkış günü</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Sağ tık menüsü</h3>
+          <ul>
+            <li>Rezervasyon Yap / Güncelle</li>
+            <li>Hesap Ekle / Hesap Çıkar</li>
+            <li>Detaylı Hesap Görüntüle</li>
+            <li>Oda listesini rezervasyona göre düzenle</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-title="Rezervasyon">
+      <p class="eyebrow">Rezervasyon yaşam döngüsü</p>
+      <h2>Durumlar ve kurallar</h2>
+      <div class="accent-bar"></div>
+      <div class="flow">
+        <div class="step">Rezervasyon Yapıldı</div><span class="arrow">→</span>
+        <div class="step">Misafir Bilgileri Girildi</div><span class="arrow">→</span>
+        <div class="step">Check-in Yapıldı</div><span class="arrow">→</span>
+        <div class="step">Check-out Yapıldı</div>
+      </div>
+      <div class="grid-2" style="margin-top:1.6rem">
+        <div class="card">
+          <h3>Oluşturma</h3>
+          <ul>
+            <li>Giriş / çıkış tarihi</li>
+            <li>Müsait oda seçimi (çakışma kontrolü)</li>
+            <li>Misafir listesi ve iletişim kişisi</li>
+            <li>Tip: Oda veya Oda + Kahvaltı</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Güncelleme güçleri</h3>
+          <ul>
+            <li>Oda ekleme / çıkarma (en az 1 oda)</li>
+            <li>Yalnızca müsait odalar listelenir</li>
+            <li>Misafir bilgilerini güncelleme</li>
+            <li>Checkout: borçlar kapanmadan çıkış yok</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-title="Hesap">
+      <p class="eyebrow">Gelir operasyonu</p>
+      <h2>Cafe hesabı &amp; ödemeler</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Cafe kataloğu</h3>
+          <p>İşletmeye özel ürün listesi. Odadan hesap kalemi olarak eklenir.</p>
+        </div>
+        <div class="card">
+          <h3>Detaylı hesap</h3>
+          <p>Oda + cafe + ödemeler tek görünümde. Hesap kapatma ve tahsilat.</p>
+        </div>
+        <div class="card">
+          <h3>Ödeme tipleri</h3>
+          <p>Nakit, kredi kartı, banka kartı. Avans ve kalan bakiye takibi.</p>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:1.4rem;max-width:48rem">
+        Check-out kapısı: oda tutarı ve cafe toplamı tamamen ödenmeden çıkış tamamlanamaz.
+        Bu kural operasyonel disiplini sisteme gömer.
+      </p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-title="Kurallar">
+      <p class="eyebrow">Uyumluluk &amp; misafir deneyimi</p>
+      <h2>İşletme kuralları SMS onayı</h2>
+      <div class="accent-bar"></div>
+      <div class="flow">
+        <div class="step">Word kurallar yükle</div><span class="arrow">→</span>
+        <div class="step">Rezervasyon seç</div><span class="arrow">→</span>
+        <div class="step">SMS ile özel link</div><span class="arrow">→</span>
+        <div class="step">Misafir onaylar</div>
+      </div>
+      <div class="grid-2" style="margin-top:1.5rem">
+        <div class="card">
+          <h3>İşletme tarafı</h3>
+          <ul>
+            <li>Kurallar dosyası yükleme / görüntüleme</li>
+            <li>Rezervasyona bağlı onay gönderimi</li>
+            <li>Onay kayıtlarını takip</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Misafir tarafı</h3>
+          <ul>
+            <li>Giriş gerektirmeyen kamu sayfası</li>
+            <li>Tek kullanımlık / token’lı link</li>
+            <li><span class="badge badge-pub">/public/rules/**</span> açık API</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-title="Entegrasyonlar">
+      <p class="eyebrow">Dış sistemler</p>
+      <h2>Entegrasyon yetenekleri</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>KBS · Jandarma Tesis Servisi</h3>
+          <p>Resmi misafir giriş/çıkış bildirimi için SOAP istemcisi (CXF / WSDL). TC ve yabancı misafir akışları.</p>
+          <p style="margin-top:0.7rem"><span class="badge badge-auth">/kbs/**</span></p>
+        </div>
+        <div class="card">
+          <h3>VatanSms</h3>
+          <p>Toplu ve tekil SMS. Rezervasyon bilgilendirme ve kurallar onay linki gönderimi.</p>
+          <p style="margin-top:0.7rem"><span class="badge badge-auth">/send-sms</span></p>
+        </div>
+        <div class="card">
+          <h3>Excel import</h3>
+          <p>Misafirleri toplu yükleme (ad, soyad, telefon, TC, plaka, meslek). Duplicate TC kontrolü.</p>
+        </div>
+        <div class="card">
+          <h3>Word kurallar dosyası</h3>
+          <p>İşletmeye özel kurallar dokümanı; onay sürecinin kaynağı.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-title="Yetkiler">
+      <p class="eyebrow">Güvenlik modeli</p>
+      <h2>Yetki ve erişim katmanları</h2>
+      <div class="accent-bar"></div>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Katman</th>
+            <th>Nasıl çalışır</th>
+            <th>Etki</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kimlik doğrulama</td>
+            <td>JWT Bearer · 30 dk · Stateless</td>
+            <td><span class="badge badge-ok">Aktif</span></td>
+          </tr>
+          <tr>
+            <td>Rol ayrımı</td>
+            <td>ROLE_COMPANY / ROLE_ADMIN token claim</td>
+            <td><span class="badge badge-ok">Token’da mevcut</span></td>
+          </tr>
+          <tr>
+            <td>UI ayrımı</td>
+            <td>İşletme Dashboard ↔ Admin Dashboard</td>
+            <td><span class="badge badge-ok">Menü bazlı</span></td>
+          </tr>
+          <tr>
+            <td>Veri izolasyonu</td>
+            <td>İşletme API’leri companyId principal ile filtreler</td>
+            <td><span class="badge badge-ok">Multi-tenant</span></td>
+          </tr>
+          <tr>
+            <td>Açık uçlar</td>
+            <td>Login, kayıt, <code>/public/rules/**</code></td>
+            <td><span class="badge badge-pub">Public</span></td>
+          </tr>
+          <tr>
+            <td>API RBAC</td>
+            <td>Şu an authenticated-only; ince taneli hasRole yok</td>
+            <td><span class="badge badge-warn">Geliştirme alanı</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-title="Yetki matrisi">
+      <p class="eyebrow">Erişim matrisi</p>
+      <h2>Kim neye erişir?</h2>
+      <div class="accent-bar"></div>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Alan</th>
+            <th>İşletme</th>
+            <th>Admin</th>
+            <th>Misafir (public)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Oda tahtası &amp; rezervasyon</td>
+            <td><span class="badge badge-ok">Evet</span></td>
+            <td><span class="badge badge-warn">UI’da yok</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Misafir / cafe / ödeme / SMS</td>
+            <td><span class="badge badge-ok">Evet</span></td>
+            <td><span class="badge badge-warn">UI’da yok</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>İşletme &amp; oda kurulumu</td>
+            <td>Kendi verisi (sınırlı)</td>
+            <td><span class="badge badge-ok">Tam yönetim</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Kurallar onay sayfası</td>
+            <td>Gönderir / takip eder</td>
+            <td>—</td>
+            <td><span class="badge badge-pub">Görür &amp; onaylar</span></td>
+          </tr>
+          <tr>
+            <td>KBS bildirim API</td>
+            <td><span class="badge badge-auth">API hazır</span></td>
+            <td><span class="badge badge-auth">Token ile</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide" data-title="Admin">
+      <p class="eyebrow">Platform yönetimi</p>
+      <h2>Admin paneli yetenekleri</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-4">
+        <div class="card"><h3>İşletme Ekle</h3><p>Yeni tesis kaydı: kategori, oda sayısı, vergi / tesis bilgileri.</p></div>
+        <div class="card"><h3>İşletme Listesi</h3><p>Tüm tesislerin merkezi görünümü.</p></div>
+        <div class="card"><h3>İşletme/Oda Güncelle</h3><p>Tesis bilgisi ve oda envanteri düzenleme.</p></div>
+        <div class="card"><h3>Oda Ekle</h3><p>Kapasite, kat, deniz manzarası ile oda tanımlama.</p></div>
+      </div>
+      <p class="lead" style="margin-top:1.5rem">
+        Admin, sahadaki işletmelerin “kurulum katmanı”; günlük ön büro işleri işletme kullanıcısındadır.
+      </p>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide" data-title="Teknoloji">
+      <p class="eyebrow">Mimari özet</p>
+      <h2>Teknoloji yığını</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Backend</h3>
+          <ul>
+            <li>Java 17 · Spring Boot 3</li>
+            <li>Spring Security + JWT</li>
+            <li>JPA / Hibernate · PostgreSQL</li>
+            <li>MapStruct · Apache CXF · POI</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Frontend</h3>
+          <ul>
+            <li>React 19 · React Router</li>
+            <li>MUI · Redux Toolkit</li>
+            <li>Axios · Day.js</li>
+            <li>İşletme + Admin ayrı kabuklar</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Dağıtım</h3>
+          <ul>
+            <li>Docker profili mevcut</li>
+            <li>Şema: <code>tys</code></li>
+            <li>FE proxy → :8080</li>
+            <li>Istanbul zaman dilimi</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section class="slide" data-title="Değer">
+      <p class="eyebrow">Neden TYS?</p>
+      <h2>İş değeri tek bakışta</h2>
+      <div class="accent-bar"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Operasyon</h3>
+          <ul>
+            <li>Günün odalarını tek bakışta görün</li>
+            <li>Rezervasyon–oda–misafir tutarlılığı</li>
+            <li>Checkout’ta borç kilidi</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Gelir</h3>
+          <ul>
+            <li>Cafe hesabını odaya bağlayın</li>
+            <li>Avans ve tahsilatı izleyin</li>
+            <li>Detaylı hesap ile şeffaflık</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Uyumluluk</h3>
+          <ul>
+            <li>Kurallar SMS onayı</li>
+            <li>KBS entegrasyon altyapısı</li>
+            <li>Kimlikli misafir kayıtları</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Ölçek</h3>
+          <ul>
+            <li>Çok tesis / çok kiracı</li>
+            <li>Admin ile merkezi kurulum</li>
+            <li>Rol ayrımlı arayüzler</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section class="slide" data-title="Kapanış">
+      <p class="eyebrow">TYS</p>
+      <h1 style="max-width:16ch">Tesisinizi yönetmenin modern yolu</h1>
+      <p class="lead">
+        Ön bürodan cafe hesabına, misafir onayından resmi bildirim altyapısına —
+        TYS, konaklama operasyonunu tek üründe toplar.
+      </p>
+      <div class="hero-meta">
+        <span class="pill">Yetenekler hazır</span>
+        <span class="pill">Yetkiler tanımlı</span>
+        <span class="pill">Büyüme alanı: ince taneli RBAC</span>
+      </div>
+      <p class="hint" style="margin-top:2rem">Sunum dosyası: docs/TYS-Yetenekler-Yetkiler-Sunum.html</p>
+    </section>
+  </div>
+
+  <div class="nav">
+    <button type="button" id="prevBtn">← Önceki</button>
+    <div class="progress" id="progress">1 / 15</div>
+    <button type="button" id="nextBtn">Sonraki →</button>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    let index = 0;
+    const progress = document.getElementById("progress");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    function show(i) {
+      index = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((s, n) => s.classList.toggle("active", n === index));
+      progress.textContent = (index + 1) + " / " + slides.length;
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === slides.length - 1;
+      document.title = "TYS — " + (slides[index].dataset.title || "Sunum");
+    }
+
+    prevBtn.addEventListener("click", () => show(index - 1));
+    nextBtn.addEventListener("click", () => show(index + 1));
+
+    window.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) {
+        e.preventDefault();
+        show(index + 1);
+      } else if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) {
+        e.preventDefault();
+        show(index - 1);
+      } else if (e.key === "Home") {
+        show(0);
+      } else if (e.key === "End") {
+        show(slides.length - 1);
+      } else if (e.key.toLowerCase() === "f") {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      }
+    });
+
+    show(0);
+  </script>
+</body>
+</html>

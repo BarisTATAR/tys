@@ -28,4 +28,7 @@ public class UpdateReservationRequest {
     private List<Payment> paymentList;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
+
+    /** Gönderilirse rezervasyon odaları bu listeyle değiştirilir (en az 1 oda). */
+    private List<CreateRoomRequest> roomList;
 }

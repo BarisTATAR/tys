@@ -100,12 +100,13 @@ public class RoomController {
         }
     }
 
-    // Boş odaları al
+    // Boş odaları al (excludeReservationId: güncellemede mevcut rezervasyonun odaları da listede kalsın)
     @GetMapping("/availableRooms")
     public List<RoomDto> getAvailableRooms(
             @RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkInDate,
-            @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOutDate) {
+            @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOutDate,
+            @RequestParam(value = "excludeReservationId", required = false) Long excludeReservationId) {
         Long companyId = getCurrentCompanyIdFromAuth();
-        return roomService.getAvailableRooms(checkInDate, checkOutDate, companyId);
+        return roomService.getAvailableRoomsExcludingReservation(checkInDate, checkOutDate, companyId, excludeReservationId);
     }
 }

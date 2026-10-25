@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class UpdateCompanyRequest {
     private Long id;
     private String name;
+    private String password;
     private String address;
     private String googleCommentsUrl;
     private CompanyCategory category;

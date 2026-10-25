@@ -4,11 +4,13 @@ import com.tys.dto.CafeDto;
 import com.tys.mapper.CafeMapper;
 import com.tys.model.Cafe;
 import com.tys.repository.CafeRepository;
+import com.tys.repository.ReservationCafeItemRepository;
 import com.tys.request.CreateCafeRequest;
 import com.tys.request.DeleteCafeRequest;
 import com.tys.request.UpdateCafeRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class CafeService {
 
     private final CafeRepository cafeRepository;
+    private final ReservationCafeItemRepository reservationCafeItemRepository;
     private final CafeMapper cafeMapper;
 
     public void createCafe(CreateCafeRequest request) {
@@ -24,17 +27,19 @@ public class CafeService {
         cafeRepository.save(cafe);
     }
 
+    @Transactional
     public void deleteCafe(DeleteCafeRequest request) {
         if (!cafeRepository.existsById(request.getId())) {
             throw new RuntimeException("Cafe not found with Id: " + request.getId());
         }
+        reservationCafeItemRepository.deleteAllByCafe_Id(request.getId());
         cafeRepository.deleteById(request.getId());
     }
 
     public void updateCafe(UpdateCafeRequest request) {
-        /*Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
+        Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
         cafeMapper.updateExistingCafeWithCafeRequest(request, existingCafe);
-        cafeRepository.save(existingCafe);*/
+        cafeRepository.save(existingCafe);
     }
 
     public Cafe getCafeById(Long id) {

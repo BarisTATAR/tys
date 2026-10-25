@@ -8,6 +8,7 @@ import com.tys.service.ExcelImportService;
 import com.tys.service.GuestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -90,8 +91,10 @@ public class GuestController {
 
             excelImportService.importGuestsFromExcel(file, companyId);
             return ResponseEntity.ok("Excel başarıyla içeri aktarıldı!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Hata: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Hata: " + e.getMessage());
         }
     }
 }

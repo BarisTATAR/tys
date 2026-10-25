@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,12 @@ public class GuestService {
     public void updateGuest(UpdateGuestRequest request) {
         Guest existingGuest = guestRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Guest not found with Id: " + request.getId()));
         guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
+        if (request.getCheckInDate() != null) {
+            existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
+        }
+        if (request.getCheckOutDate() != null) {
+            existingGuest.setCheckOutDate(request.getCheckOutDate().atStartOfDay());
+        }
         guestRepository.save(existingGuest);
     }
 
@@ -80,35 +87,38 @@ public class GuestService {
     }
 
     public List<String> getAllGuestForDay(int day, Long companyId) {
-        List<Guest> companyGuests = guestRepository.findAllByCompanyId(companyId);
-        if (day >= 5) {
-            return companyGuests.stream()
-                    .filter(g -> g.getCheckInDate() != null && g.getCheckOutDate() != null)
-                    .filter(g -> {
-                        long stayDays = ChronoUnit.DAYS.between(
-                                g.getCheckInDate().toLocalDate(),
-                                g.getCheckOutDate().toLocalDate()
-                        );
-                        return stayDays >= day;
-                    })
-                    .map(Guest::getPhoneNumber)
-                    .filter(phone -> phone != null && !phone.isBlank())
-                    .distinct()
-                    .toList();
-        } else {
-            return companyGuests.stream()
-                    .filter(g -> g.getCheckInDate() != null && g.getCheckOutDate() != null)
-                    .filter(g -> {
-                        long stayDays = ChronoUnit.DAYS.between(
-                                g.getCheckInDate().toLocalDate(),
-                                g.getCheckOutDate().toLocalDate()
-                        );
-                        return stayDays == day;
-                    })
-                    .map(Guest::getPhoneNumber)
-                    .filter(phone -> phone != null && !phone.isBlank())
-                    .distinct()
-                    .toList();
+        return guestRepository.findAllByCompanyIdWithReservations(companyId)
+                .stream()
+                .filter(guest -> matchesStayDayCriteria(guest, companyId, day))
+                .map(Guest::getPhoneNumber)
+                .filter(phone -> phone != null && !phone.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private boolean matchesStayDayCriteria(Guest guest, Long companyId, int day) {
+        if (guest.getCheckInDate() != null && guest.getCheckOutDate() != null) {
+            long stayDays = calculateStayDays(guest.getCheckInDate(), guest.getCheckOutDate());
+            if (matchesStayDays(stayDays, day)) {
+                return true;
+            }
         }
+        if (guest.getReservations() == null) {
+            return false;
+        }
+        return guest.getReservations().stream()
+                .filter(reservation -> reservation.getCompany() != null
+                        && Objects.equals(reservation.getCompany().getId(), companyId))
+                .filter(reservation -> reservation.getCheckInDate() != null && reservation.getCheckOutDate() != null)
+                .map(reservation -> calculateStayDays(reservation.getCheckInDate(), reservation.getCheckOutDate()))
+                .anyMatch(stayDays -> matchesStayDays(stayDays, day));
+    }
+
+    private static long calculateStayDays(LocalDateTime checkIn, LocalDateTime checkOut) {
+        return ChronoUnit.DAYS.between(checkIn.toLocalDate(), checkOut.toLocalDate());
+    }
+
+    private static boolean matchesStayDays(long stayDays, int day) {
+        return day >= 5 ? stayDays >= day : stayDays == day;
     }
 }

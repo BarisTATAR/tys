@@ -6,10 +6,12 @@ import com.tys.model.Company;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.LoginRequest;
+import com.tys.request.SendRulesSmsRequest;
 import com.tys.request.UpdateCompanyRequest;
 import com.tys.response.LoginResponse;
 import com.tys.service.CompanyService;
 import com.tys.service.RulesFileService;
+import com.tys.service.RulesSmsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,7 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final RulesFileService rulesFileService;
+    private final RulesSmsService rulesSmsService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
@@ -120,6 +123,43 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
         return ResponseEntity.ok(dto.get());
+    }
+
+    /**
+     * İşletme kurallarını onay talebi ile birlikte verilen telefon numarasına SMS olarak gönderir.
+     */
+    @PostMapping("/send-rules-sms")
+    public ResponseEntity<?> sendRulesSms(@RequestBody SendRulesSmsRequest request) {
+        try {
+            Long companyId = getCurrentCompanyIdFromAuth();
+            return ResponseEntity.ok(rulesSmsService.sendRulesSms(companyId, request));
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            error.put("error", "VALIDATION_ERROR");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "SMS gönderilemedi: " + e.getMessage());
+            error.put("error", "SMS_SEND_ERROR");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Bir rezervasyona gönderilmiş kurallar onay linklerinin durumunu listeler.
+     */
+    @GetMapping("/rules-approvals/{reservationId}")
+    public ResponseEntity<?> getRulesApprovals(@PathVariable Long reservationId) {
+        try {
+            Long companyId = getCurrentCompanyIdFromAuth();
+            return ResponseEntity.ok(rulesSmsService.getApprovalsByReservation(companyId, reservationId));
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            error.put("error", "VALIDATION_ERROR");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
 
     private Long getCurrentCompanyIdFromAuth() {

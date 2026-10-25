@@ -62,6 +62,7 @@ public class CafeController {
             error.put("error", "FORBIDDEN");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
         }
+        request.setCompanyId(companyId);
         cafeService.updateCafe(request);
         return ResponseEntity.ok().build();
     }

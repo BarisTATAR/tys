@@ -36,7 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String n = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
         return n.endsWith("/company/login") || n.equals("/company/login")
                 || n.endsWith("/company/admin_login") || n.equals("/company/admin_login")
-                || n.endsWith("/admin/login") || n.equals("/admin/login");
+                || n.endsWith("/admin/login") || n.equals("/admin/login")
+                || n.contains("/public/");
     }
 
     @Override

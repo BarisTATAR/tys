@@ -18,9 +18,14 @@ public interface RoomMapper {
     @Mapping(target = "id", ignore = true)
     void updateExistingRoomWithRoomRequest(UpdateRoomRequest updateRoomRequest, @MappingTarget Room existingRoom);
 
+    /**
+     * Ana ekran oda tahtası için rezervasyonlar dahil maplenir.
+     * Rezervasyon DTO içindeki roomList için {@link ReservationMapper#roomsToSimpleRoomList} kullanılır
+     * (circular mapping olmaması için).
+     */
     @Mapping(source = "company.id", target = "companyId")
     @Mapping(source = "company.name", target = "companyName")
     RoomDto toDto(Room room);
-    
+
     List<RoomDto> toDtoList(List<Room> rooms);
 }
