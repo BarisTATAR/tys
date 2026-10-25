@@ -1,11 +1,17 @@
 package com.tys.model;
 
+import com.tys.client.SnfEnumKonaklayanKullanimSekli;
+import com.tys.client.SnfEnumUlkeler;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -18,6 +24,9 @@ public class Guest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "identityNumber")
+    private String identityNumber;
 
     @Column(name = "name")
     private String name;
@@ -38,7 +47,10 @@ public class Guest {
     private String address;
 
     @Column(name = "country_code")
-    private Integer countryCode;
+    private SnfEnumUlkeler countryCode;
+
+    @Column(name = "guest_usage_type")
+    private SnfEnumKonaklayanKullanimSekli guestUsageType;
 
     @Column(name = "plate_number")
     private String plateNumber;
@@ -49,24 +61,16 @@ public class Guest {
     @Column(name = "is_contact")
     private Boolean isContact;
 
-    @Column(name = "booking_date")
-    private LocalDate bookingDate;
-
     @Column(name = "check_in_date")
-    private LocalDate checkInDate;
+    private LocalDateTime checkInDate;
 
     @Column(name = "check_out_date")
-    private LocalDate checkOutDate;
+    private LocalDateTime checkOutDate;
 
-    @ManyToOne
-    @JoinColumn(name = "room", nullable = false)
-    private Room room;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
-    @ManyToOne
-    @JoinColumn(name = "reservation", nullable = false)
-    private Reservation reservation;
-
-    @OneToOne
-    @JoinColumn(name = "reservationContact", nullable = false)
-    private Reservation reservationContact;
+    @ManyToMany(mappedBy = "guests")
+    private List<Reservation> reservations = new ArrayList<>();
 }

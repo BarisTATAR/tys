@@ -3,18 +3,17 @@ Adding New Guest
 http://localhost:8080/guests
 
 {
-  "nationalId":23,
-  "countryCode":"156",
-  "plateNumber": "06SZR77",
-  "checkInDate":"2025-03-05",
-  "checkOutDate": "2025-03-08",
-  "phoneNumber":"05069787977",
-  "name":"Gizem",
-  "surname":"TATARINHO",
-  "job":"Engineer",
-  "isGuestShortStay": false,
-  "guestEmail":"yesildal",
-  "guestBookingDate":"2024-05-08",
-  "guestAdress":"gizem@gmail.com"
-
+"nationalId":23,
+"countryCode":"156",
+"plateNumber": "06SZR77",
+"checkInDate":"2025-03-05",
+"checkOutDate": "2025-03-08",
+"phoneNumber":"05069787977",
+"name":"Gizem",
+"surname":"TATARINHO",
+"job":"Engineer",
+"isGuestShortStay": false,
+"guestEmail":"yesildal",
+"guestBookingDate":"2024-05-08",
+"guestAdress":"gizem@gmail.com"
 }
