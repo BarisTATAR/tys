@@ -186,7 +186,8 @@ public class ReservationService {
         Long companyId = reservation.getCompany().getId();
         LocalDate reqIn = ReservationDateUtils.toLocalDate(reservation.getCheckInDate());
         LocalDate reqOut = ReservationDateUtils.toLocalDate(reservation.getCheckOutDate());
-        if (reqIn == null || reqOut == null || !reqOut.isAfter(reqIn)) {
+        // Aynı gün giriş-çıkış (günlük kullanım) serbest; yalnızca çıkış < giriş engellenir
+        if (reqIn == null || reqOut == null || reqOut.isBefore(reqIn)) {
             throw new RuntimeException("Geçerli giriş/çıkış tarihleri gereklidir.");
         }
 
@@ -264,23 +265,28 @@ public class ReservationService {
 
     @Transactional
     public void createReservation(CreateReservationRequest request, Long companyId) {
-        Reservation reservation = reservationMapper.createReservationRequestToEntity(request);
+        if (request.getRoomList() == null || request.getRoomList().isEmpty()) {
+            throw new RuntimeException("Rezervasyonda en az bir oda olmalıdır.");
+        }
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
+
+        Reservation reservation = reservationMapper.createReservationRequestToEntity(request);
         reservation.setCompany(company);
-
-        List<Room> roomsFromDb = new ArrayList<>();
-        for (CreateRoomRequest roomFromRequest : request.getRoomList()) {
-            Room room = roomRepository.findByNumberAndCompanyId(roomFromRequest.getNumber(), companyId)
-                    .orElseThrow(() -> new RuntimeException(
-                            "Oda bulunamadı. Oda no: " + roomFromRequest.getNumber() + ", işletme id: " + companyId));
-            roomsFromDb.add(room);
+        // Mapper oda listesini doldurmuş olabilir; müsaitlik/tarih kuralları sync içinde uygulanır
+        if (reservation.getRooms() != null) {
+            reservation.getRooms().clear();
         }
-        reservation.setRooms(roomsFromDb);
 
-        List<Guest> guests = guestMapper.toEntityList(request.getGuestList());
-        reservation.setGuests(guests);
+        // P0: tarih (checkOut > checkIn) + oda çakışması + min 1 oda
+        syncReservationRooms(reservation, request.getRoomList());
+
+        if (request.getGuestList() != null && !request.getGuestList().isEmpty()) {
+            reservation.setGuests(guestMapper.toEntityList(request.getGuestList()));
+        } else {
+            reservation.setGuests(new ArrayList<>());
+        }
 
         reservationRepository.save(reservation);
     }

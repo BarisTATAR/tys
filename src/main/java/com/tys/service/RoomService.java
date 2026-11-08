@@ -90,14 +90,16 @@ public class RoomService {
 
         LocalDate reqIn = ReservationDateUtils.toLocalDate(checkInDate);
         LocalDate reqOut = ReservationDateUtils.toLocalDate(checkOutDate);
-        if (reqIn == null || reqOut == null || !reqOut.isAfter(reqIn)) {
+        // Aynı gün giriş-çıkışa izin ver; müsaitlik için aynı gün [in, in+1) aralığı gibi işlenir
+        if (reqIn == null || reqOut == null || reqOut.isBefore(reqIn)) {
             return List.of();
         }
+        LocalDate queryOut = reqOut.isEqual(reqIn) ? reqIn.plusDays(1) : reqOut;
 
         Set<Long> occupiedRoomIds = new HashSet<>();
         try {
             List<Long> nativeOccupied = reservationRepository.findOccupiedRoomIdsNative(
-                    companyId, reqIn, reqOut, excludeReservationId);
+                    companyId, reqIn, queryOut, excludeReservationId);
             if (nativeOccupied != null) {
                 occupiedRoomIds.addAll(nativeOccupied);
             }
@@ -106,7 +108,7 @@ public class RoomService {
         }
 
         // Yedek / birleştir: owning side rezervasyonlardan da doldur
-        occupiedRoomIds.addAll(findOccupiedRoomIdsFromEntities(companyId, reqIn, reqOut, excludeReservationId));
+        occupiedRoomIds.addAll(findOccupiedRoomIdsFromEntities(companyId, reqIn, queryOut, excludeReservationId));
 
         return roomRepository.findAllByCompanyIdWithReservations(companyId).stream()
                 .filter(room -> room.getId() != null && !occupiedRoomIds.contains(room.getId()))
@@ -143,7 +145,9 @@ public class RoomService {
             if (resIn == null || resOut == null) {
                 continue;
             }
-            if (resIn.isBefore(reqOut) && resOut.isAfter(reqIn)) {
+            // Aynı gün rezervasyonlar dolulukta [in, in+1) gibi sayılır
+            LocalDate effectiveResOut = resOut.isEqual(resIn) ? resIn.plusDays(1) : resOut;
+            if (resIn.isBefore(reqOut) && effectiveResOut.isAfter(reqIn)) {
                 if (res.getRooms() == null) {
                     continue;
                 }
@@ -161,15 +165,19 @@ public class RoomService {
         if (room == null || room.getId() == null || room.getCompany() == null) {
             return false;
         }
+        if (reqIn == null || reqOut == null || reqOut.isBefore(reqIn)) {
+            return false;
+        }
+        LocalDate queryOut = reqOut.isEqual(reqIn) ? reqIn.plusDays(1) : reqOut;
         Set<Long> occupied = new HashSet<>();
         try {
             occupied.addAll(reservationRepository.findOccupiedRoomIdsNative(
-                    room.getCompany().getId(), reqIn, reqOut, excludeReservationId));
+                    room.getCompany().getId(), reqIn, queryOut, excludeReservationId));
         } catch (Exception ignored) {
             // ignore
         }
         occupied.addAll(findOccupiedRoomIdsFromEntities(
-                room.getCompany().getId(), reqIn, reqOut, excludeReservationId));
+                room.getCompany().getId(), reqIn, queryOut, excludeReservationId));
         return !occupied.contains(room.getId());
     }
 

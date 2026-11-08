@@ -32,10 +32,16 @@ public class ReservationController {
         throw new IllegalStateException("Kimlik doğrulanamadı.");
     }
     @PostMapping("/create")
-    public ResponseEntity<Void> createReservation(@Valid @RequestBody CreateReservationRequest request) {
-        Long companyId = getCurrentCompanyIdFromAuth();
-        reservationService.createReservation(request, companyId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> createReservation(@Valid @RequestBody CreateReservationRequest request) {
+        try {
+            Long companyId = getCurrentCompanyIdFromAuth();
+            reservationService.createReservation(request, companyId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException ex) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @PutMapping("/update")

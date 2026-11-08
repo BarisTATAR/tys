@@ -47,7 +47,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
               AND (:excludeReservationId IS NULL OR res.id <> :excludeReservationId)
               AND (res.reservation_status IS NULL OR res.reservation_status <> 3)
               AND CAST(res.check_in_date AS date) < CAST(:checkOutDate AS date)
-              AND CAST(res.check_out_date AS date) > CAST(:checkInDate AS date)
+              AND (
+                    CASE
+                        WHEN CAST(res.check_out_date AS date) = CAST(res.check_in_date AS date)
+                            THEN CAST(res.check_in_date AS date) + INTERVAL '1 day'
+                        ELSE CAST(res.check_out_date AS date)
+                    END
+                  ) > CAST(:checkInDate AS date)
             """, nativeQuery = true)
     List<Long> findOccupiedRoomIdsNative(
             @Param("companyId") Long companyId,

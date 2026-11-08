@@ -86,12 +86,29 @@ public class RoomController {
         return ResponseEntity.ok(roomService.getRoomById(id));
     }
 
-    // Company ID ile odaları getir
+    // Company ID ile odaları getir (COMPANY yalnızca kendi işletmesi; ADMIN tümü)
     @GetMapping("/by-company/{companyId}")
     public ResponseEntity<?> getRoomsByCompanyId(@PathVariable Long companyId) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+            if (!isAdmin) {
+                Long currentCompanyId = getCurrentCompanyIdFromAuth();
+                if (!currentCompanyId.equals(companyId)) {
+                    Map<String, String> forbidden = new HashMap<>();
+                    forbidden.put("message", "Bu işlem için yetkiniz yok.");
+                    forbidden.put("error", "FORBIDDEN");
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(forbidden);
+                }
+            }
             List<RoomDto> rooms = roomService.getAllRoomsByCompanyId(companyId);
             return ResponseEntity.ok(rooms);
+        } catch (IllegalStateException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            error.put("error", "UNAUTHORIZED");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Room bilgileri alınamadı: " + e.getMessage());
