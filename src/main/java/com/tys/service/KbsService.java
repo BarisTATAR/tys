@@ -5,6 +5,8 @@ import com.tys.mapper.KbsMapper;
 import com.tys.request.*;
 import com.tys.response.*;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.xml.ws.BindingProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,13 +15,30 @@ import java.util.List;
 @Slf4j
 public class KbsService {
     private final KbsMapper kbsMapper;
+    private final long tesisKodu;
+    private final long kullaniciTc;
+    private final String sifre;
     private volatile ISrvShsYtkTml port;
 
-    public KbsService(KbsMapper kbsMapper) {
+    public KbsService(
+            KbsMapper kbsMapper,
+            @Value("${kbs.tesis-kodu:0}") long tesisKodu,
+            @Value("${kbs.kullanici-tc:0}") long kullaniciTc,
+            @Value("${kbs.sifre:}") String sifre) {
         this.kbsMapper = kbsMapper;
+        this.tesisKodu = tesisKodu;
+        this.kullaniciTc = kullaniciTc;
+        this.sifre = sifre;
+    }
+
+    private void ensureCredentials() {
+        if (tesisKodu == 0L || kullaniciTc == 0L || sifre == null || sifre.isBlank()) {
+            throw new IllegalStateException("KBS tesis bilgileri tanımlı değil.");
+        }
     }
 
     private ISrvShsYtkTml port() {
+        ensureCredentials();
         ISrvShsYtkTml local = port;
         if (local == null) {
             synchronized (this) {
@@ -28,6 +47,11 @@ public class KbsService {
                     try {
                         SrvShsYtkTml service = new SrvShsYtkTml();
                         local = service.getBasicHttpsBindingKBSServis();
+                        BindingProvider provider = (BindingProvider) local;
+                        provider.getRequestContext().put("com.sun.xml.ws.connect.timeout", 8000);
+                        provider.getRequestContext().put("com.sun.xml.ws.request.timeout", 8000);
+                        provider.getRequestContext().put("jakarta.xml.ws.client.connectionTimeout", 8000);
+                        provider.getRequestContext().put("jakarta.xml.ws.client.receiveTimeout", 8000);
                         port = local;
                     } catch (Exception ex) {
                         log.error("KBS client could not be initialized: {}", ex.getMessage());
@@ -45,7 +69,7 @@ public class KbsService {
             /*((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, 123L);
             ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "123");*/
 
-            MusteriKimlikNoListe musteriKimlikNoListe = port().musteriKimlikNoListele(11111070495L, 123L, "123");
+            MusteriKimlikNoListe musteriKimlikNoListe = port().musteriKimlikNoListele(tesisKodu, kullaniciTc, sifre);
             Sonuc musteriKimlikNoListeleSonuc = musteriKimlikNoListe.getSonuc().getValue();
             if (musteriKimlikNoListeleSonuc.isBasarili()) {
                 kbsGuestResponseList = musteriKimlikNoListe.getMItems().getValue().getMusteriKimlikNoGirisSonuc()
@@ -76,7 +100,7 @@ public class KbsService {
             /*((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, 123L);
             ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "123");*/
 
-            MusteriYabanciListe musteriYabanciListe = port().musteriYabanciListele(11111070495L, 123L, "123");
+            MusteriYabanciListe musteriYabanciListe = port().musteriYabanciListele(tesisKodu, kullaniciTc, sifre);
             Sonuc musteriYabanciListeleSonuc = musteriYabanciListe.getSonuc().getValue();
             if (musteriYabanciListeleSonuc.isBasarili()) {
                 kbsForeignGuestResponseList = musteriYabanciListe.getMItems().getValue().getMusteriYabanciGirisSonuc()
@@ -105,7 +129,7 @@ public class KbsService {
     public KbsParameterResponse kbsParameterList(KbsParameterRequest request) {
         try {
             KbsParameterResponse kbsParameterResponse = new KbsParameterResponse();
-            Parametreler parametreler = port().parametreListele(11111070495L, 123L, "123", request.getParameter());
+            Parametreler parametreler = port().parametreListele(tesisKodu, kullaniciTc, sifre, request.getParameter());
             Sonuc parametrelerSonuc = parametreler.getSonuc().getValue();
 
             if (parametrelerSonuc.isBasarili()) {
@@ -131,29 +155,33 @@ public class KbsService {
     public KbsGuestCheckInResponse checkInGuest(KbsGuestCheckInRequest request) {
         try {
             KbsGuestCheckInResponse kbsGuestCheckInResponse = new KbsGuestCheckInResponse();
-            MusteriKimlikNoGirisSonuc musteriKimlikNoGirisSonuc = port().musteriKimlikNoGiris(11111070495L, 123L, "123", request.getMusteri());
+            MusteriKimlikNoGirisSonuc musteriKimlikNoGirisSonuc = port().musteriKimlikNoGiris(tesisKodu, kullaniciTc, sifre, request.getMusteri());
             Sonuc musteriKimlikNoGirisrSonuc = musteriKimlikNoGirisSonuc.getSonuc().getValue();
 
             if (musteriKimlikNoGirisrSonuc.isBasarili()) {
                 kbsGuestCheckInResponse.setMusteri(musteriKimlikNoGirisSonuc);
-            } else {
-                if (Boolean.FALSE.equals(musteriKimlikNoGirisrSonuc.getHataKodu().isEmpty())) {
-                    log.error("musteriKimlikNoGiris throws an error - code : {} , message : {}",
-                            musteriKimlikNoGirisrSonuc.getMesaj().getValue(),
-                            musteriKimlikNoGirisrSonuc.getHataKodu().get(0));
-                }
+                return kbsGuestCheckInResponse;
             }
-            return kbsGuestCheckInResponse;
+            String detail = "KBS girişi başarısız.";
+            if (musteriKimlikNoGirisrSonuc.getMesaj() != null
+                    && musteriKimlikNoGirisrSonuc.getMesaj().getValue() != null
+                    && !musteriKimlikNoGirisrSonuc.getMesaj().getValue().isBlank()) {
+                detail = musteriKimlikNoGirisrSonuc.getMesaj().getValue();
+            }
+            log.error("musteriKimlikNoGiris unsuccessful: {}", detail);
+            throw new RuntimeException("KBS girişi yapılamadı. " + detail);
+        } catch (RuntimeException ex) {
+            throw ex;
         } catch (Exception ex) {
             log.error("Error occured while calling Kbs service, musteriKimlikNoGiris : {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new RuntimeException("KBS girişi yapılamadı.");
         }
     }
 
     public KbsGuestCheckOutResponse checkOutGuest(KbsGuestCheckOutRequest request) {
         try {
             KbsGuestCheckOutResponse kbsGuestCheckOutResponse = new KbsGuestCheckOutResponse();
-            Sonuc sonuc = port().musteriKimlikNoCikis(11111070495L, 123L, "123", request.getMusteri());
+            Sonuc sonuc = port().musteriKimlikNoCikis(tesisKodu, kullaniciTc, sifre, request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsGuestCheckOutResponse.setSonuc(sonuc);
@@ -174,7 +202,7 @@ public class KbsService {
     public KbsGuestUpdateCheckInResponse updateCheckInGuest(KbsGuestUpdateCheckInRequest request) {
         try {
             KbsGuestUpdateCheckInResponse kbsGuestUpdateCheckInResponse = new KbsGuestUpdateCheckInResponse();
-            Sonuc sonuc = port().musteriKimlikNoGuncelle(11111070495L, 123L, "123", request.getMusteri());
+            Sonuc sonuc = port().musteriKimlikNoGuncelle(tesisKodu, kullaniciTc, sifre, request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsGuestUpdateCheckInResponse.setSonuc(sonuc);
@@ -195,7 +223,7 @@ public class KbsService {
     public KbsForeignGuestCheckInResponse checkInForeignGuest(KbsForeignGuestCheckInRequest request) {
         try {
             KbsForeignGuestCheckInResponse kbsForeignGuestCheckInResponse = new KbsForeignGuestCheckInResponse();
-            MusteriYabanciGirisSonuc musteriYabanciGiris = port().musteriYabanciGiris(11111070495L, 123L, "123", request.getMusteri());
+            MusteriYabanciGirisSonuc musteriYabanciGiris = port().musteriYabanciGiris(tesisKodu, kullaniciTc, sifre, request.getMusteri());
             Sonuc musteriKimlikNoGirisrSonuc = musteriYabanciGiris.getSonuc().getValue();
 
             if (musteriKimlikNoGirisrSonuc.isBasarili()) {
@@ -217,7 +245,7 @@ public class KbsService {
     public KbsForeignGuestCheckOutResponse checkOutForeignGuest(KbsForeignGuestCheckOutRequest request) {
         try {
             KbsForeignGuestCheckOutResponse kbsForeignGuestCheckOutResponse = new KbsForeignGuestCheckOutResponse();
-            Sonuc sonuc = port().musteriYabanciCikis(11111070495L, 123L, "123", request.getMusteri());
+            Sonuc sonuc = port().musteriYabanciCikis(tesisKodu, kullaniciTc, sifre, request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsForeignGuestCheckOutResponse.setSonuc(sonuc);
@@ -238,7 +266,7 @@ public class KbsService {
     public KbsForeignGuestUpdateCheckInResponse updateForeignCheckInGuest(KbsForeignGuestUpdateCheckInRequest request) {
         try {
             KbsForeignGuestUpdateCheckInResponse kbsForeignGuestUpdateCheckInResponse = new KbsForeignGuestUpdateCheckInResponse();
-            Sonuc sonuc = port().musteriYabanciGuncelle(11111070495L, 123L, "123", request.getMusteri());
+            Sonuc sonuc = port().musteriYabanciGuncelle(tesisKodu, kullaniciTc, sifre, request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsForeignGuestUpdateCheckInResponse.setSonuc(sonuc);

@@ -1,7 +1,11 @@
 package com.tys.service;
 
+import com.tys.client.MusteriKimlikNoCikisTalep;
 import com.tys.client.MusteriKimlikNoGirisTalep;
+import com.tys.client.ObjectFactory;
+import com.tys.client.SnfEnumKonaklayanCikisTurleri;
 import com.tys.client.SnfEnumKonaklayanKullanimSekli;
+import com.tys.client.Sonuc;
 import com.tys.dto.ReservationDto;
 import com.tys.dto.RoomDto;
 import com.tys.enums.ReservationStatus;
@@ -14,13 +18,23 @@ import com.tys.model.Room;
 import com.tys.model.Guest;
 import com.tys.repository.CompanyRepository;
 import com.tys.repository.GuestRepository;
+import com.tys.repository.KbsNoticeRepository;
 import com.tys.repository.PaymentRepository;
 import com.tys.repository.ReservationRepository;
 import com.tys.repository.RoomRepository;
 import com.tys.request.*;
+import com.tys.response.EarlyCheckOutOutcome;
+import com.tys.response.KbsGuestCheckInResponse;
+import com.tys.response.KbsGuestCheckOutResponse;
 import com.tys.util.ReservationDateUtils;
+import com.tys.validation.InputRules;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -46,11 +60,13 @@ public class ReservationService {
     private final RoomService roomService;
     private final VatanSmsService vatanSmsService;
     private final KbsService kbsService;
+    private final KbsNoticeRepository kbsNoticeRepository;
+    private final ObjectProvider<KbsNotificationService> kbsNotifications;
     private final String RESERVATION_MADE_MESSAGE = " rezervasyonunuz başarıyla oluşturulmuştur.";
     private final String CHECK_IN_DONE_MESSAGE = " giriş işlemleriniz başarıyla tamamlanmıştır.";
     private final String CHECK_OUT_DONE_MESSAGE = " çıkış işlemleriniz başarıyla tamamlanmıştır. Görüşleriniz bizim için değerli, bizi değerlendirmeyi unutmayın.";
 
-    public ReservationService(ReservationRepository reservationRepository, ReservationMapper reservationMapper, GuestMapper guestMapper, RoomRepository roomRepository, GuestRepository guestRepository, PaymentRepository paymentRepository, CompanyRepository companyRepository, ReservationCafeItemService reservationCafeItemService, RoomService roomService, VatanSmsService vatanSmsService, KbsService kbsService) {
+    public ReservationService(ReservationRepository reservationRepository, ReservationMapper reservationMapper, GuestMapper guestMapper, RoomRepository roomRepository, GuestRepository guestRepository, PaymentRepository paymentRepository, CompanyRepository companyRepository, ReservationCafeItemService reservationCafeItemService, RoomService roomService, VatanSmsService vatanSmsService, KbsService kbsService, KbsNoticeRepository kbsNoticeRepository, ObjectProvider<KbsNotificationService> kbsNotifications) {
         this.reservationRepository = reservationRepository;
         this.reservationMapper = reservationMapper;
         this.guestMapper = guestMapper;
@@ -62,11 +78,19 @@ public class ReservationService {
         this.roomService = roomService;
         this.vatanSmsService = vatanSmsService;
         this.kbsService = kbsService;
+        this.kbsNoticeRepository = kbsNoticeRepository;
+        this.kbsNotifications = kbsNotifications;
     }
 
     @Transactional
-    public void updateReservation(UpdateReservationRequest request) throws Exception {
-        Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + request.getId()));
+    public String updateReservation(UpdateReservationRequest request, Long companyId) throws Exception {
+        Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
+        assertReservationCompany(existingReservation, companyId);
+        validateUpdateInput(request);
+        boolean checkingOut = request.getReservationStatus() == ReservationStatus.CHECK_OUT_DONE
+                && existingReservation.getReservationStatus() != ReservationStatus.CHECK_OUT_DONE;
+        boolean checkingIn = request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE
+                && existingReservation.getReservationStatus() != ReservationStatus.CHECK_IN_DONE;
         // 1️⃣ Eğer status CHECKOUT yapılmak isteniyorsa borç kontrolü yap
 
         Guest contactGuest = new Guest();
@@ -82,13 +106,11 @@ public class ReservationService {
         if (request.getReservationStatus() == ReservationStatus.RESERVATION_MADE) {
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + RESERVATION_MADE_MESSAGE));
-        } else if (request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE) {
+        } else if (checkingIn) {
+            assertCheckInHasAllGuests(request, existingReservation);
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_IN_DONE_MESSAGE));
-//            for (Guest guest : request.getGuests()) {
-//                kbsService.checkInGuest(getGuestForKBS(guest));
-//            }
-        } else if (request.getReservationStatus() == ReservationStatus.CHECK_OUT_DONE) {
+        } else if (checkingOut) {
             isAllPaymentsCompleted(request, existingReservation);
 //            vatanSmsService.sendSms(new CreateSMSRequest(List.of(request.getGuests().get(0).getPhoneNumber()), "",
 //                    contactGuest.getName() + " " + contactGuest.getSurname() + CHECK_OUT_DONE_MESSAGE + " " +
@@ -108,6 +130,35 @@ public class ReservationService {
             }
             syncReservationGuests(existingReservation, request.getGuests());
         }
+        List<Guest> kbsCheckOutTargets = new ArrayList<>();
+        if (checkingOut && existingReservation.getGuests() != null) {
+            LocalDateTime checkedOutAt = LocalDateTime.now();
+            for (Guest guest : existingReservation.getGuests()) {
+                if (isAddedGuest(guest) && guest.getCheckOutDate() == null) {
+                    kbsCheckOutTargets.add(guest);
+                    guest.setCheckOutDate(checkedOutAt);
+                }
+            }
+        }
+        List<Guest> kbsCheckInTargets = new ArrayList<>();
+        if (checkingIn) {
+            LocalDateTime checkedInAt = LocalDateTime.now();
+            List<Guest> source = request.getGuests() != null ? request.getGuests() : existingReservation.getGuests();
+            if (source != null) {
+                for (Guest guest : source) {
+                    if (isAddedGuest(guest)) {
+                        kbsCheckInTargets.add(guest);
+                    }
+                }
+            }
+            if (existingReservation.getGuests() != null) {
+                for (Guest guest : existingReservation.getGuests()) {
+                    if (isAddedGuest(guest) && guest.getCheckInDate() == null) {
+                        guest.setCheckInDate(checkedInAt);
+                    }
+                }
+            }
+        }
         if (request.getRoomList() != null) {
             if (existingReservation.getCompany() != null) {
                 existingReservation.getCompany().getId();
@@ -117,7 +168,118 @@ public class ReservationService {
             }
             syncReservationRooms(existingReservation, request.getRoomList());
         }
+        InputRules.stayCounts(
+                request.getAdultGuestNumber() != null ? request.getAdultGuestNumber() : existingReservation.getAdultGuestNumber(),
+                request.getChildGuestNumber() != null ? request.getChildGuestNumber() : existingReservation.getChildGuestNumber(),
+                request.getBabyGuestNumber() != null ? request.getBabyGuestNumber() : existingReservation.getBabyGuestNumber(),
+                totalRoomCapacity(existingReservation));
         reservationRepository.save(existingReservation);
+        if (checkingIn) {
+            queueKbs(existingReservation.getId(), kbsCheckInTargets, existingReservation, true);
+            return KbsNotificationService.QUEUED;
+        }
+        if (checkingOut) {
+            queueKbs(existingReservation.getId(), kbsCheckOutTargets, existingReservation, false);
+            return KbsNotificationService.QUEUED;
+        }
+        return null;
+    }
+
+    private void assertReservationCompany(Reservation reservation, Long companyId) {
+        if (companyId == null
+                || reservation.getCompany() == null
+                || !companyId.equals(reservation.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
+    }
+
+    /**
+     * Check-in için adı ve soyadı girilmiş misafir sayısı, yetişkin ve çocuk toplamına eşit olmalıdır.
+     */
+    private void validateUpdateInput(UpdateReservationRequest request) {
+        if (request.getPaymentList() != null) {
+            for (Payment payment : request.getPaymentList()) {
+                if (payment != null) {
+                    InputRules.payment(payment.getAmount(), payment.getAdvancePayment());
+                }
+            }
+        }
+        if (request.getGuests() == null) {
+            return;
+        }
+        for (Guest guest : request.getGuests()) {
+            if (guest == null) {
+                continue;
+            }
+            String previousIdentity = null;
+            String previousPhone = null;
+            if (guest.getId() != null) {
+                Guest stored = guestRepository.findById(guest.getId()).orElse(null);
+                if (stored != null) {
+                    previousIdentity = stored.getIdentityNumber();
+                    previousPhone = stored.getPhoneNumber();
+                }
+            }
+            InputRules.guestFields(
+                    guest.getName(),
+                    guest.getSurname(),
+                    guest.getIdentityNumber(),
+                    guest.getPhoneNumber(),
+                    guest.getEmail(),
+                    guest.getPlateNumber(),
+                    previousIdentity,
+                    previousPhone);
+        }
+    }
+
+    private int totalRoomCapacity(Reservation reservation) {
+        if (reservation.getRooms() == null || reservation.getRooms().isEmpty()) {
+            return 0;
+        }
+        int sum = 0;
+        boolean known = false;
+        for (Room room : reservation.getRooms()) {
+            if (room != null && room.getCapacity() != null) {
+                sum += room.getCapacity();
+                known = true;
+            }
+        }
+        return known ? sum : 0;
+    }
+
+    private void assertCheckInHasAllGuests(UpdateReservationRequest request, Reservation existingReservation) {
+        int adults = request.getAdultGuestNumber() != null
+                ? request.getAdultGuestNumber()
+                : (existingReservation.getAdultGuestNumber() != null ? existingReservation.getAdultGuestNumber() : 0);
+        int children = request.getChildGuestNumber() != null
+                ? request.getChildGuestNumber()
+                : (existingReservation.getChildGuestNumber() != null ? existingReservation.getChildGuestNumber() : 0);
+        int required = adults + children;
+
+        List<Guest> guests = request.getGuests() != null ? request.getGuests() : existingReservation.getGuests();
+        int added = 0;
+        if (guests != null) {
+            for (Guest guest : guests) {
+                if (isAddedGuest(guest)) {
+                    added++;
+                }
+            }
+        }
+        if (added != required) {
+            throw new RuntimeException(
+                    "Konaklayacak yetişkin ve çocukların adı ve soyadı girilmeden check-in yapılamaz.");
+        }
+    }
+
+    private boolean isAddedGuest(Guest guest) {
+        if (guest == null) {
+            return false;
+        }
+        return hasText(guest.getName()) && hasText(guest.getSurname());
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     /**
@@ -239,20 +401,232 @@ public class ReservationService {
         reservation.getRooms().addAll(newRooms);
     }
 
+    /**
+     * KBS reddi otel kaydını geri almaz. Bildirilemeyen kişiler mesaj olarak döner.
+     */
+    public String notifyGuestsForKbs(List<Guest> guests, boolean checkIn) {
+        return notifyKbs(guests, checkIn);
+    }
+
+    private void queueKbs(Long reservationId, List<Guest> targets, Reservation reservation, boolean checkIn) {
+        List<Long> ids = new ArrayList<>();
+        if (targets != null) {
+            for (Guest target : targets) {
+                if (target == null) {
+                    continue;
+                }
+                if (target.getId() != null) {
+                    ids.add(target.getId());
+                    continue;
+                }
+                if (reservation.getGuests() == null) {
+                    continue;
+                }
+                for (Guest managed : reservation.getGuests()) {
+                    if (managed.getId() != null && samePerson(managed, target)) {
+                        ids.add(managed.getId());
+                    }
+                }
+            }
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
+        List<Long> frozen = List.copyOf(ids);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kbsNotifications.getObject().dispatch(reservationId, frozen, checkIn);
+            }
+        });
+    }
+
+    private boolean samePerson(Guest left, Guest right) {
+        String leftName = left.getName() == null ? "" : left.getName().trim();
+        String rightName = right.getName() == null ? "" : right.getName().trim();
+        String leftSurname = left.getSurname() == null ? "" : left.getSurname().trim();
+        String rightSurname = right.getSurname() == null ? "" : right.getSurname().trim();
+        return leftName.equalsIgnoreCase(rightName) && leftSurname.equalsIgnoreCase(rightSurname);
+    }
+
+    private String notifyKbs(List<Guest> guests, boolean checkIn) {
+        if (guests == null || guests.isEmpty()) {
+            return null;
+        }
+        StringBuilder warnings = new StringBuilder();
+        for (Guest guest : guests) {
+            try {
+                if (checkIn) {
+                    checkInGuestOnKbs(guest);
+                } else {
+                    checkOutGuestOnKbs(guest);
+                }
+            } catch (Exception ex) {
+                if (warnings.length() > 0) {
+                    warnings.append(' ');
+                }
+                warnings.append(ex.getMessage() != null ? ex.getMessage() : "KBS bildirimi yapılamadı.");
+            }
+        }
+        return warnings.length() == 0 ? null : warnings.toString();
+    }
+
+    /**
+     * Yalnızca seçilen misafir çıkar. Kalan misafirler varken rezervasyon tarihi ve durumu değişmez.
+     * Konaklayan kimse kalmazsa rezervasyonun kendisi de check-out olur.
+     *
+     * @return rezervasyonun tamamı kapandıysa true
+     */
+    @Transactional
+    public EarlyCheckOutOutcome earlyCheckOutGuest(Long reservationId, Long guestId, EarlyGuestCheckOutRequest request, Long companyId) throws Exception {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
+        assertReservationCompany(reservation, companyId);
+        if (reservation.getReservationStatus() != ReservationStatus.CHECK_IN_DONE) {
+            throw new RuntimeException("Erken check-out için önce check-in yapılmış olmalıdır.");
+        }
+        if (reservation.getGuests() != null) {
+            reservation.getGuests().size();
+        }
+
+        Guest guest = guestRepository.findById(guestId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
+        boolean onReservation = reservation.getGuests() != null
+                && reservation.getGuests().stream().anyMatch(existing -> guestId.equals(existing.getId()));
+        if (!onReservation) {
+            throw new RuntimeException("Bu misafir rezervasyona bağlı değil.");
+        }
+        if (guest.getCheckOutDate() != null) {
+            throw new RuntimeException("Bu misafir zaten çıkış yapmış.");
+        }
+
+        if (request != null) {
+            if (hasText(request.getName())) {
+                guest.setName(request.getName().trim());
+            }
+            if (hasText(request.getSurname())) {
+                guest.setSurname(request.getSurname().trim());
+            }
+            if (hasText(request.getIdentityNumber())) {
+                guest.setIdentityNumber(request.getIdentityNumber().trim());
+            }
+        }
+        if (!isAddedGuest(guest)) {
+            throw new RuntimeException("Erken check-out için misafirin adı ve soyadı girilmiş olmalıdır.");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate checkIn = ReservationDateUtils.toLocalDate(reservation.getCheckInDate());
+        if (checkIn != null && today.isBefore(checkIn)) {
+            throw new RuntimeException("Erken check-out için çıkış tarihi giriş tarihinden önce olamaz.");
+        }
+
+        boolean lastGuest = reservation.getGuests().stream()
+                .filter(this::isAddedGuest)
+                .filter(other -> !guestId.equals(other.getId()))
+                .allMatch(other -> other.getCheckOutDate() != null);
+        if (lastGuest) {
+            UpdateReservationRequest paymentRequest = new UpdateReservationRequest();
+            paymentRequest.setId(reservation.getId());
+            isAllPaymentsCompleted(paymentRequest, reservation);
+        }
+
+        guest.setCheckOutDate(LocalDateTime.now());
+
+        if (lastGuest) {
+            reservation.setCheckOutDate(today.atStartOfDay());
+            reservation.setReservationStatus(ReservationStatus.CHECK_OUT_DONE);
+        }
+        reservationRepository.save(reservation);
+        queueKbs(reservation.getId(), List.of(guest), reservation, false);
+        return new EarlyCheckOutOutcome(lastGuest, KbsNotificationService.QUEUED);
+    }
+
+    private void checkInGuestOnKbs(Guest guest) throws Exception {
+        String identity = guest.getIdentityNumber() == null ? "" : guest.getIdentityNumber().replaceAll("\\D", "");
+        String guestName = guest.getName().trim() + " " + guest.getSurname().trim();
+        if (identity.isEmpty()) {
+            throw new RuntimeException(guestName + " için T.C. kimlik numarası olmadan KBS girişi yapılamadı.");
+        }
+        try {
+            Long.parseLong(identity);
+        } catch (NumberFormatException ex) {
+            throw new RuntimeException(guestName + " için T.C. kimlik numarası geçersiz.");
+        }
+        KbsGuestCheckInResponse response = kbsService.checkInGuest(getGuestForKBS(guest));
+        if (response == null || response.getMusteri() == null) {
+            throw new RuntimeException(guestName + " için KBS girişi yapılamadı.");
+        }
+    }
+
+    private void checkOutGuestOnKbs(Guest guest) throws Exception {
+        String identity = guest.getIdentityNumber() == null ? "" : guest.getIdentityNumber().replaceAll("\\D", "");
+        String guestName = guest.getName().trim() + " " + guest.getSurname().trim();
+        if (identity.isEmpty()) {
+            throw new RuntimeException(guestName + " için T.C. kimlik numarası olmadan KBS çıkışı yapılamaz.");
+        }
+        long kimlikNo;
+        try {
+            kimlikNo = Long.parseLong(identity);
+        } catch (NumberFormatException ex) {
+            throw new RuntimeException(guestName + " için T.C. kimlik numarası geçersiz.");
+        }
+
+        ObjectFactory factory = new ObjectFactory();
+        MusteriKimlikNoCikisTalep talep = factory.createMusteriKimlikNoCikisTalep();
+        talep.setCKSTIP(SnfEnumKonaklayanCikisTurleri.TESISTENCIKIS);
+        talep.setCKSTRH(factory.createMusteriKimlikNoCikisTalepCKSTRH(convert(LocalDateTime.now())));
+        talep.setKIMLIKNO(factory.createMusteriKimlikNoCikisTalepKIMLIKNO(kimlikNo));
+
+        KbsGuestCheckOutRequest kbsRequest = new KbsGuestCheckOutRequest();
+        kbsRequest.setMusteri(talep);
+        KbsGuestCheckOutResponse response = kbsService.checkOutGuest(kbsRequest);
+        Sonuc sonuc = response != null ? response.getSonuc() : null;
+        if (sonuc == null || !Boolean.TRUE.equals(sonuc.isBasarili())) {
+            throw new RuntimeException(guestName + " için KBS çıkışı yapılamadı. " + kbsResultMessage(sonuc));
+        }
+    }
+
+    private String kbsResultMessage(Sonuc sonuc) {
+        if (sonuc == null) {
+            return "KBS yanıt vermedi.";
+        }
+        if (sonuc.getMesaj() != null && sonuc.getMesaj().getValue() != null && !sonuc.getMesaj().getValue().isBlank()) {
+            return sonuc.getMesaj().getValue();
+        }
+        if (sonuc.getHataKodu() != null && !sonuc.getHataKodu().isEmpty()) {
+            return String.join(", ", sonuc.getHataKodu());
+        }
+        return "KBS çıkışı başarısız.";
+    }
+
     private void isAllPaymentsCompleted(UpdateReservationRequest request, Reservation existingReservation) {
         // Rezervasyona bağlı tüm ödemeleri al
         List<Payment> payments = paymentRepository.findAllByReservationId(existingReservation.getId());
+        if (payments == null || payments.isEmpty()) {
+            throw new RuntimeException("Ödeme kaydı olmadan check-out yapılamaz.");
+        }
 
         // Toplam ödenen tutarı hesapla
-        BigDecimal totalPaid = payments.get(0).getAdvancePayment();
+        BigDecimal totalPaid = payments.get(0).getAdvancePayment() != null
+                ? payments.get(0).getAdvancePayment()
+                : BigDecimal.ZERO;
         for (Payment p : payments) {
             if (p.getPaidAmount() != null) {
                 totalPaid = totalPaid.add(p.getPaidAmount());
             }
         }
 
-        // Toplam borç = reservation totalAmount
-        BigDecimal totalAmount = payments.get(0).getAmount().add(reservationCafeItemService.getReservationCafeAmountByReservationId(request.getId()));
+        // İlk ödemenin tutarı boş veya 0 ise borç 0 kabul edilir.
+        BigDecimal reservationAmount = payments.get(0).getAmount() != null
+                ? payments.get(0).getAmount()
+                : BigDecimal.ZERO;
+        BigDecimal cafeAmount = reservationCafeItemService.getReservationCafeAmountByReservationId(
+                existingReservation.getId());
+        if (cafeAmount == null) {
+            cafeAmount = BigDecimal.ZERO;
+        }
+        BigDecimal totalAmount = reservationAmount.add(cafeAmount);
 
         // Borç devam ediyorsa checkout’a izin verme
         if (totalPaid.compareTo(totalAmount) < 0) {
@@ -268,6 +642,35 @@ public class ReservationService {
         if (request.getRoomList() == null || request.getRoomList().isEmpty()) {
             throw new RuntimeException("Rezervasyonda en az bir oda olmalıdır.");
         }
+        InputRules.stayCounts(
+                request.getAdultGuestNumber(),
+                request.getChildGuestNumber(),
+                request.getBabyGuestNumber(),
+                0);
+        InputRules.plainText(request.getReservationMessage(), "Açıklama", InputRules.MAX_TEXT, false);
+        if (request.getGuestList() != null) {
+            for (CreateGuestRequest guest : request.getGuestList()) {
+                if (guest == null) {
+                    continue;
+                }
+                InputRules.guestFields(
+                        guest.getName(),
+                        guest.getSurname(),
+                        guest.getIdentityNumber(),
+                        guest.getPhoneNumber(),
+                        guest.getEmail(),
+                        guest.getPlateNumber(),
+                        null,
+                        null);
+            }
+        }
+        if (request.getPaymentList() != null) {
+            for (CreatePaymentRequest payment : request.getPaymentList()) {
+                if (payment != null) {
+                    InputRules.payment(payment.getAmount(), payment.getAdvancePayment());
+                }
+            }
+        }
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
@@ -281,6 +684,11 @@ public class ReservationService {
 
         // P0: tarih (checkOut > checkIn) + oda çakışması + min 1 oda
         syncReservationRooms(reservation, request.getRoomList());
+        InputRules.stayCounts(
+                request.getAdultGuestNumber(),
+                request.getChildGuestNumber(),
+                request.getBabyGuestNumber(),
+                totalRoomCapacity(reservation));
 
         if (request.getGuestList() != null && !request.getGuestList().isEmpty()) {
             reservation.setGuests(guestMapper.toEntityList(request.getGuestList()));
@@ -291,21 +699,21 @@ public class ReservationService {
         reservationRepository.save(reservation);
     }
 
-    public void deleteReservation(DeleteReservationRequest request) {
-        if (!reservationRepository.existsById(request.getId())) {
-            throw new RuntimeException("Reservation not found with Id: " + request.getId());
-        }
-        reservationRepository.deleteById(request.getId());
+    public void deleteReservation(DeleteReservationRequest request, Long companyId) {
+        Reservation reservation = reservationRepository.findById(request.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
+        assertReservationCompany(reservation, companyId);
+        reservationRepository.delete(reservation);
     }
 
     @Transactional
-    public ReservationDto getReservationById(Long id) {
+    public ReservationDto getReservationById(Long id, Long companyId) {
         // Bu rezervasyona bağlı odaları JOIN FETCH ile getir (tüm odalar değil)
         List<Reservation> withRooms = reservationRepository.findWithRoomsByReservationIds(List.of(id));
         Reservation reservation = withRooms.stream()
                 .findFirst()
                 .orElseGet(() -> reservationRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Reservation not found with Id: " + id)));
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı.")));
 
         if (reservation.getGuests() != null) {
             reservation.getGuests().size();
@@ -313,8 +721,12 @@ public class ReservationService {
         if (reservation.getPaymentList() != null) {
             reservation.getPaymentList().size();
         }
+        assertReservationCompany(reservation, companyId);
 
-        return reservationMapper.toDto(reservation);
+        ReservationDto dto = reservationMapper.toDto(reservation);
+        kbsNoticeRepository.findFirstByReservationIdOrderByCreatedAtDesc(reservation.getId())
+                .ifPresent(notice -> dto.setKbsWarning(notice.getMessage()));
+        return dto;
     }
 
     public List<ReservationDto> getAllReservations() {
@@ -349,10 +761,11 @@ public class ReservationService {
     }
 
     @Transactional
-    public void addPayment(Long reservationId, CreatePaidAmountRequest request) {
+    public void addPayment(Long reservationId, CreatePaidAmountRequest request, Long companyId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
+        assertReservationCompany(reservation, companyId);
 
         Payment payment = new Payment();
         payment.setPaidAmount(request.getPaidAmount());

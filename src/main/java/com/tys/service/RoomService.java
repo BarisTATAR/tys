@@ -14,15 +14,16 @@ import com.tys.request.DeleteRoomRequest;
 import com.tys.request.UpdateRoomRequest;
 import com.tys.util.ReservationDateUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -34,37 +35,65 @@ public class RoomService {
     private final CompanyRepository companyRepository;
     private final RoomMapper roomMapper;
 
-    public void createRoom(CreateRoomRequest request) {
+    public void createRoom(CreateRoomRequest request, Long actorCompanyId, boolean admin) {
+        Company company = resolveCompany(request, actorCompanyId, admin);
         Room room = roomMapper.createRoomRequestToEntity(request);
-        Optional<Company> company = companyRepository.findByName(request.getCompanyName());
-        if (company.isEmpty()) {
-            throw new RuntimeException("Company not found with Id: " + request.getCompanyId());
-        }
-        long currentRoomCount = roomRepository.countByCompany(company.get());
+        long currentRoomCount = roomRepository.countByCompany(company);
 
-        if (currentRoomCount >= company.get().getTotalRoomNumber()) {
-            throw new RuntimeException("Toplam oda sayısı sınırı aşıldı. Maksimum izin verilen oda sayısı: " + company.get().getTotalRoomNumber());
+        if (currentRoomCount >= company.getTotalRoomNumber()) {
+            throw new RuntimeException("Toplam oda sayısı sınırı aşıldı. Maksimum izin verilen oda sayısı: " + company.getTotalRoomNumber());
         }
-        room.setCompany(company.get());
+        room.setCompany(company);
         roomRepository.save(room);
     }
 
-    public void deleteRoom(DeleteRoomRequest request) {
-        if (!roomRepository.existsById(request.getId())) {
-            throw new RuntimeException("Room not found with Id: " + request.getId());
-        }
-        roomRepository.deleteById(request.getId());
+    public void deleteRoom(DeleteRoomRequest request, Long actorCompanyId, boolean admin) {
+        Room room = roomRepository.findById(request.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Oda bulunamadı."));
+        assertRoomCompany(room, actorCompanyId, admin);
+        roomRepository.delete(room);
     }
 
-    public void updateRoom(UpdateRoomRequest request) {
-        Room existingRoom = roomRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Room not found with Id: " + request.getId()));
+    public void updateRoom(UpdateRoomRequest request, Long actorCompanyId, boolean admin) {
+        Room existingRoom = roomRepository.findById(request.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Oda bulunamadı."));
+        assertRoomCompany(existingRoom, actorCompanyId, admin);
+        Company owner = existingRoom.getCompany();
         roomMapper.updateExistingRoomWithRoomRequest(request, existingRoom);
+        existingRoom.setCompany(owner);
         roomRepository.save(existingRoom);
     }
 
-    public RoomDto getRoomById(Long id) {
-        Room room = roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found with Id: " + id));
+    public RoomDto getRoomById(Long id, Long actorCompanyId, boolean admin) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Oda bulunamadı."));
+        assertRoomCompany(room, actorCompanyId, admin);
         return roomMapper.toDto(room);
+    }
+
+    private Company resolveCompany(CreateRoomRequest request, Long actorCompanyId, boolean admin) {
+        if (!admin) {
+            return companyRepository.findById(actorCompanyId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "İşletme bulunamadı."));
+        }
+        if (request.getCompanyId() != null) {
+            return companyRepository.findById(request.getCompanyId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "İşletme bulunamadı."));
+        }
+        if (request.getCompanyName() == null || request.getCompanyName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "İşletme seçilmelidir.");
+        }
+        return companyRepository.findByName(request.getCompanyName().trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "İşletme bulunamadı."));
+    }
+
+    private void assertRoomCompany(Room room, Long actorCompanyId, boolean admin) {
+        if (admin) {
+            return;
+        }
+        if (actorCompanyId == null || room.getCompany() == null || !actorCompanyId.equals(room.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
     }
 
     public List<RoomDto> getAllRooms() {

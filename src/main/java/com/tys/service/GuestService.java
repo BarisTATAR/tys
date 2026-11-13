@@ -4,19 +4,26 @@ import com.tys.dto.GuestDto;
 import com.tys.mapper.GuestMapper;
 import com.tys.model.Company;
 import com.tys.model.Guest;
+import com.tys.model.Reservation;
 import com.tys.repository.CompanyRepository;
 import com.tys.repository.GuestRepository;
 import com.tys.request.CreateGuestRequest;
+import com.tys.validation.InputRules;
 import com.tys.request.DeleteGuestRequest;
 import com.tys.request.UpdateGuestRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +34,21 @@ public class GuestService {
     private final GuestMapper guestMapper;
 
     public void createGuest(CreateGuestRequest request, Long companyId) {
+        InputRules.guestFields(
+                request.getName(),
+                request.getSurname(),
+                request.getIdentityNumber(),
+                request.getPhoneNumber(),
+                request.getEmail(),
+                request.getPlateNumber(),
+                null,
+                null);
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new IllegalArgumentException("Misafir adı boş olamaz.");
+        }
+        if (request.getIdentityNumber() == null || request.getIdentityNumber().isBlank()) {
+            throw new IllegalArgumentException("TCKN gereklidir.");
+        }
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
         Guest guest = guestMapper.createGuestRequestToEntity(request);
@@ -34,15 +56,27 @@ public class GuestService {
         guestRepository.save(guest);
     }
 
-    public void deleteGuest(DeleteGuestRequest request) {
-        if (!guestRepository.existsById(request.getId())) {
-            throw new RuntimeException("Guests not found with Id: " + request.getId());
-        }
-        guestRepository.deleteById(request.getId());
+    @Transactional
+    public void deleteGuest(DeleteGuestRequest request, Long companyId) {
+        Guest guest = guestRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Guests not found with Id: " + request.getId()));
+        assertGuestCompany(guest, companyId);
+        guestRepository.delete(guest);
     }
 
-    public void updateGuest(UpdateGuestRequest request) {
+    @Transactional
+    public void updateGuest(UpdateGuestRequest request, Long companyId) {
         Guest existingGuest = guestRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Guest not found with Id: " + request.getId()));
+        assertGuestCompany(existingGuest, companyId);
+        InputRules.guestFields(
+                request.getName(),
+                request.getSurname(),
+                request.getIdentityNumber(),
+                request.getPhoneNumber(),
+                request.getEmail(),
+                request.getPlateNumber(),
+                existingGuest.getIdentityNumber(),
+                existingGuest.getPhoneNumber());
         guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
         if (request.getCheckInDate() != null) {
             existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
@@ -69,10 +103,52 @@ public class GuestService {
                 .toList();
     }
 
-    public GuestDto getGuestByIdentityNumber(String identityNumber) {
+    @Transactional(readOnly = true)
+    public GuestDto getGuestByIdentityNumber(String identityNumber, Long companyId) {
         Guest guest = guestRepository.findByIdentityNumber(identityNumber)
-                .orElseThrow(() -> new RuntimeException("Guest not found with IdentityNumber: " + identityNumber));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
+        assertGuestCompany(guest, companyId);
         return guestMapper.toDto(guest);
+    }
+
+    public void assertPhonesBelongToCompany(List<String> phones, Long companyId) {
+        if (phones == null || phones.isEmpty()) {
+            throw new RuntimeException("SMS için numara gerekli.");
+        }
+        Set<String> allowed = new HashSet<>();
+        for (String phone : getAllGuestForSMS(companyId)) {
+            allowed.add(phoneKey(phone));
+        }
+        for (String phone : phones) {
+            if (!allowed.contains(phoneKey(phone))) {
+                throw new RuntimeException("SMS yalnızca bu işletmenin kayıtlı misafir numaralarına gönderilebilir.");
+            }
+        }
+    }
+
+    private void assertGuestCompany(Guest guest, Long companyId) {
+        if (guest.getCompany() != null && Objects.equals(guest.getCompany().getId(), companyId)) {
+            return;
+        }
+        if (guest.getReservations() != null) {
+            for (Reservation reservation : guest.getReservations()) {
+                if (reservation.getCompany() != null && Objects.equals(reservation.getCompany().getId(), companyId)) {
+                    return;
+                }
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+    }
+
+    private String phoneKey(String phone) {
+        if (phone == null) {
+            return "";
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() > 10) {
+            digits = digits.substring(digits.length() - 10);
+        }
+        return digits;
     }
 
     public List<String> getAllGuestInYear(int year, Long companyId) {

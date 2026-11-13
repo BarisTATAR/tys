@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,26 @@ public class ApiExceptionHandler {
     @ExceptionHandler(RoomCountBelowRegisteredException.class)
     public ResponseEntity<Map<String, String>> handleRoomCountBelowRegistered(RoomCountBelowRegisteredException ex) {
         return badRequestResponse(ex);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleStatus(ResponseStatusException ex) {
+        String message = ex.getReason() == null || ex.getReason().isBlank()
+                ? "İstek tamamlanamadı."
+                : ex.getReason();
+        Map<String, String> error = new HashMap<>();
+        error.put("message", message);
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        String message = ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Girilen değer geçersiz."
+                : ex.getMessage();
+        Map<String, String> error = new HashMap<>();
+        error.put("message", message);
+        return ResponseEntity.badRequest().body(error);
     }
 
     private static ResponseEntity<Map<String, String>> conflictResponse(CompanyBusinessException ex) {

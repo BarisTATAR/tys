@@ -6,11 +6,10 @@ import com.tys.enums.PaymentType;
 import com.tys.model.Payment;
 import com.tys.request.CreatePaymentRequest;
 import com.tys.request.UpdatePaymentRequest;
+import com.tys.security.CurrentActor;
 import com.tys.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,17 +20,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/payment")
-@CrossOrigin(origins = "http://localhost:3000")
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final CurrentActor currentActor;
 
     private Long getCurrentCompanyIdFromAuth() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof Long) {
-            return (Long) auth.getPrincipal();
-        }
-        throw new IllegalStateException("Kimlik doğrulanamadı.");
+        return currentActor.requireCompanyId();
     }
 
     @PostMapping("/create")
@@ -43,13 +38,13 @@ public class PaymentController {
 
     @PutMapping("/update")
     public ResponseEntity<Void> updatePayment(@RequestBody UpdatePaymentRequest request) {
-        paymentService.updatePayment(request);
+        paymentService.updatePayment(request, getCurrentCompanyIdFromAuth());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PaymentDto> getPaymentById(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(paymentService.getPaymentByReservationId(id));
+        return ResponseEntity.ok(paymentService.getPaymentByReservationId(id, getCurrentCompanyIdFromAuth()));
     }
 
     @GetMapping

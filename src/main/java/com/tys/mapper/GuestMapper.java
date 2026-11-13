@@ -20,6 +20,8 @@ public interface GuestMapper {
     @Mapping(target = "checkOutDate", ignore = true)
     void updateExistingGuestWithGuestRequest(UpdateGuestRequest updateGuestRequest, @MappingTarget Guest existingGuest);
 
+    @Mapping(target = "checkOutDate", expression = "java(guest.getCheckOutDate() == null ? null : guest.getCheckOutDate().toLocalDate())")
+    @Mapping(target = "checkInDate", expression = "java(guest.getCheckInDate() == null ? null : guest.getCheckInDate().toLocalDate())")
     GuestDto toDto(Guest guest);
 
     List<Guest> toEntityList(List<CreateGuestRequest> dtoList);

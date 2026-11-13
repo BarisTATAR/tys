@@ -8,6 +8,7 @@ import com.tys.repository.ReservationCafeItemRepository;
 import com.tys.request.CreateCafeRequest;
 import com.tys.request.DeleteCafeRequest;
 import com.tys.request.UpdateCafeRequest;
+import com.tys.validation.InputRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class CafeService {
     private final CafeMapper cafeMapper;
 
     public void createCafe(CreateCafeRequest request) {
+        InputRules.cafeItem(request.getName(), request.getPrice());
         Cafe cafe = cafeMapper.createCafeRequestToEntity(request);
         cafeRepository.save(cafe);
     }
@@ -37,6 +39,7 @@ public class CafeService {
     }
 
     public void updateCafe(UpdateCafeRequest request) {
+        InputRules.cafeItem(request.getName(), request.getPrice());
         Cafe existingCafe = cafeRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Cafe not found with Id: " + request.getId()));
         cafeMapper.updateExistingCafeWithCafeRequest(request, existingCafe);
         cafeRepository.save(existingCafe);

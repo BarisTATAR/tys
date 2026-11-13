@@ -4,14 +4,15 @@ import com.tys.dto.GuestDto;
 import com.tys.request.CreateGuestRequest;
 import com.tys.request.DeleteGuestRequest;
 import com.tys.request.UpdateGuestRequest;
+import com.tys.security.CurrentActor;
 import com.tys.service.ExcelImportService;
 import com.tys.service.GuestService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,20 +21,18 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/guest")
-@CrossOrigin(origins = "http://localhost:3000")
 public class GuestController {
 
+    private static final Logger log = LoggerFactory.getLogger(GuestController.class);
+
     private final GuestService guestService;
+    private final CurrentActor currentActor;
 
     @Autowired
     private ExcelImportService excelImportService;
 
     private Long getCurrentCompanyIdFromAuth() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof Long) {
-            return (Long) auth.getPrincipal();
-        }
-        throw new IllegalStateException("Kimlik doğrulanamadı.");
+        return currentActor.requireCompanyId();
     }
 
     @PostMapping("/create")
@@ -45,19 +44,19 @@ public class GuestController {
 
     @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteGuest(@RequestBody DeleteGuestRequest request) {
-        guestService.deleteGuest(request);
+        guestService.deleteGuest(request, getCurrentCompanyIdFromAuth());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/update")
     public ResponseEntity<Void> updateGuest(@RequestBody UpdateGuestRequest request) {
-        guestService.updateGuest(request);
+        guestService.updateGuest(request, getCurrentCompanyIdFromAuth());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{identityNumber}")
     public ResponseEntity<GuestDto> getGuestByIdentityNumber(@PathVariable("identityNumber") String identityNumber) {
-        return ResponseEntity.ok(guestService.getGuestByIdentityNumber(identityNumber));
+        return ResponseEntity.ok(guestService.getGuestByIdentityNumber(identityNumber, getCurrentCompanyIdFromAuth()));
     }
 
     @GetMapping("/all")
@@ -94,7 +93,8 @@ public class GuestController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Hata: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Hata: " + e.getMessage());
+            log.error("Excel import failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Excel dosyası işlenemedi.");
         }
     }
 }

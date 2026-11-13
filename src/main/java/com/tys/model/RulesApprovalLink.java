@@ -24,7 +24,7 @@ public class RulesApprovalLink {
     @Column(name = "company_id", nullable = false)
     private Long companyId;
 
-    @Column(name = "reservation_id", nullable = false)
+    @Column(name = "reservation_id")
     private Long reservationId;
 
     @Column(name = "phone_number", nullable = false, length = 32)

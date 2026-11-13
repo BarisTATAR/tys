@@ -2,7 +2,7 @@ package com.tys.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tys.request.CreateSMSRequest;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -14,16 +14,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class VatanSmsService {
-    private static final String SMS_URL = "https://api.vatansms.net/api/v1/1toN";
-    private static final String API_ID = "ba7889c926c44bcaefe19a94";
-    private static final String API_KEY = "402231631e9de08d2debc7c8";
+    private final String smsUrl;
+    private final String apiId;
+    private final String apiKey;
+    private final String sender;
 
+    public VatanSmsService(
+            @Value("${sms.api-url:https://api.vatansms.net/api/v1/1toN}") String smsUrl,
+            @Value("${sms.api-id:}") String apiId,
+            @Value("${sms.api-key:}") String apiKey,
+            @Value("${sms.sender:}") String sender) {
+        this.smsUrl = smsUrl;
+        this.apiId = apiId;
+        this.apiKey = apiKey;
+        this.sender = sender;
+    }
 
     public void sendSms(CreateSMSRequest request) {
+        if (apiId == null || apiId.isBlank() || apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("SMS servis bilgileri tanımlı değil.");
+        }
         try {
-           URL url = new URL(SMS_URL);
+            URL url = new URL(smsUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setRequestMethod("POST");
@@ -31,10 +44,9 @@ public class VatanSmsService {
             conn.setDoOutput(true);
 
             Map<String, Object> params = new HashMap<>();
-            params.put("api_id", API_ID);
-            params.put("api_key", API_KEY);
-            //params.put("sender", request.getSenderName());
-            params.put("sender", "SMS TEST");
+            params.put("api_id", apiId);
+            params.put("api_key", apiKey);
+            params.put("sender", sender == null || sender.isBlank() ? "SMS TEST" : sender);
             params.put("message_type", "normal");
             params.put("message", request.getMessage());
             params.put("message_content_type", "bilgi");
@@ -44,25 +56,22 @@ public class VatanSmsService {
             String json = mapper.writeValueAsString(params);
 
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = json.getBytes("utf-8");
+                byte[] input = json.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
 
-            System.out.println("Response Code: " + conn.getResponseCode());
-            System.out.println("Response Message: " + conn.getResponseMessage());
+            if (conn.getResponseCode() != 200) {
+                throw new RuntimeException("SMS gönderilemedi.");
+            }
 
             InputStream is = conn.getErrorStream();
             if (is != null) {
-                String error = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                System.out.println("ERROR BODY: " + error);
+                is.close();
             }
-
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("SMS gönderilemedi: " + conn.getResponseMessage());
-            }
-
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("SMS servis hatası", e);
+            throw new RuntimeException("SMS servis hatası");
         }
     }
 }

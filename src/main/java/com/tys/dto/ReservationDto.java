@@ -16,6 +16,7 @@ public class ReservationDto {
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     private String reservationMessage;
+    private String kbsWarning;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
     private LocalDateTime reservationDate;

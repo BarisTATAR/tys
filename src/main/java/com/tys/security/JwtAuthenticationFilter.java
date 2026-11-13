@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final TokenBlacklist tokenBlacklist;
 
     /** Login ve CORS preflight (OPTIONS) isteklerinde JWT filtresini çalıştırma - path veya sonu (Docker/context path uyumlu) */
     @Override
@@ -46,14 +47,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader(AUTHORIZATION_HEADER);
-
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+        String token = null;
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            token = authHeader.substring(BEARER_PREFIX.length());
+        }
+        if (token == null || token.isBlank()) {
+            token = AuthCookie.read(request);
+        }
+        if (token == null || token.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(BEARER_PREFIX.length());
-        if (!jwtService.validateToken(token) || SecurityContextHolder.getContext().getAuthentication() != null) {
+        if (!jwtService.validateToken(token)
+                || tokenBlacklist.isRevoked(token)
+                || SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }

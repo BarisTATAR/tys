@@ -14,7 +14,6 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reservation-cafe-items")
-@CrossOrigin(origins = "http://localhost:3000")
 public class ReservationCafeItemController {
 
     private final ReservationCafeItemService reservationCafeItemService;

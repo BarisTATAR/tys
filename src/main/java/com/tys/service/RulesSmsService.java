@@ -11,6 +11,7 @@ import com.tys.repository.ReservationRepository;
 import com.tys.repository.RulesApprovalLinkRepository;
 import com.tys.request.CreateSMSRequest;
 import com.tys.request.SendRulesSmsRequest;
+import com.tys.validation.InputRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -53,9 +54,14 @@ public class RulesSmsService {
 
         Guest contactGuest = findContactGuest(reservation.getGuests());
 
-        String phone = normalizePhone(
-                firstNonBlank(request.getPhoneNumber(),
-                        contactGuest != null ? contactGuest.getPhoneNumber() : null));
+        String rawPhone = firstNonBlank(request.getPhoneNumber(),
+                contactGuest != null ? contactGuest.getPhoneNumber() : null);
+        if (rawPhone != null && !rawPhone.isBlank()) {
+            InputRules.requireMobile(rawPhone);
+        }
+        InputRules.personName(request.getGuestName(), "Misafir adı");
+        InputRules.plainText(request.getMessage(), "SMS metni", InputRules.MAX_SMS, false);
+        String phone = normalizePhone(rawPhone);
         if (phone == null) {
             throw new IllegalArgumentException(
                     "Telefon numarası giriniz veya rezervasyonda iletişim misafiri telefonu tanımlayın.");

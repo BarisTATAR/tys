@@ -2,24 +2,31 @@ package com.tys.controller;
 
 import com.tys.dto.CompanyDto;
 import com.tys.dto.RulesFileDto;
-import com.tys.model.Company;
 import com.tys.request.CreateCompanyRequest;
 import com.tys.request.DeleteCompanyRequest;
 import com.tys.request.LoginRequest;
 import com.tys.request.SendRulesSmsRequest;
 import com.tys.request.UpdateCompanyRequest;
 import com.tys.response.LoginResponse;
+import com.tys.security.AuthCookie;
+import com.tys.security.CurrentActor;
+import com.tys.security.JwtService;
+import com.tys.security.LoginGuard;
+import com.tys.security.TokenBlacklist;
 import com.tys.service.CompanyService;
 import com.tys.service.RulesFileService;
 import com.tys.service.RulesSmsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,62 +35,93 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/company")
-@CrossOrigin(origins = "http://localhost:3000")
 public class CompanyController {
 
     private final CompanyService companyService;
     private final RulesFileService rulesFileService;
     private final RulesSmsService rulesSmsService;
+    private final CurrentActor currentActor;
+    private final LoginGuard loginGuard;
+    private final TokenBlacklist tokenBlacklist;
+    private final JwtService jwtService;
+    private final AuthCookie authCookie;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse response = companyService.login(request, false);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request,
+                                               HttpServletRequest httpRequest,
+                                               HttpServletResponse httpResponse) {
+        return respondToLogin(request, false, httpRequest, httpResponse);
     }
 
     @PostMapping("/admin_login")
-    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest request) {
-        LoginResponse response = companyService.login(request, true);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest request,
+                                                    HttpServletRequest httpRequest,
+                                                    HttpServletResponse httpResponse) {
+        return respondToLogin(request, true, httpRequest, httpResponse);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Başarıyla çıkış yapıldı. Token'ı client tarafında silin.");
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, String>> logout(
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String token = null;
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            token = authorization.substring("Bearer ".length());
+        }
+        if (token == null || token.isBlank()) {
+            token = AuthCookie.read(httpRequest);
+        }
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Oturum bulunamadı."));
+        }
+        Date expiration = jwtService.getExpiration(token);
+        tokenBlacklist.revoke(token, expiration.toInstant());
+        authCookie.clear(httpRequest, httpResponse);
+        return ResponseEntity.ok(Map.of("message", "Oturum iptal edildi."));
     }
 
 
     @PostMapping("/create")
     public ResponseEntity<Void> createCompany(@RequestBody CreateCompanyRequest request) {
+        currentActor.requireAdmin();
         companyService.createCompany(request);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteCompany(@RequestBody DeleteCompanyRequest request) {
+        currentActor.requireAdmin();
         companyService.deleteCompany(request);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Company> getCompanyById(@PathVariable Long id) {
+    public ResponseEntity<CompanyDto> getCompanyById(@PathVariable Long id) {
+        if (!currentActor.isAdmin()) {
+            Long companyId = currentActor.requireCompanyId();
+            if (!companyId.equals(id)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+            }
+        }
         return ResponseEntity.ok(companyService.getCompanyById(id));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<CompanyDto>> getAllCompanies() {
+        currentActor.requireAdmin();
         return ResponseEntity.ok(companyService.getAllCompanies());
     }
 
     @GetMapping("/names")
     public ResponseEntity<List<String>> getCompanyNames() {
+        currentActor.requireAdmin();
         return ResponseEntity.ok(companyService.getCompanyNames());
     }
 
     @PutMapping("/update")
     public ResponseEntity<Void> updateCompany(@RequestBody UpdateCompanyRequest request) {
+        currentActor.requireAdmin();
         companyService.updateCompany(request);
         return ResponseEntity.ok().build();
     }
@@ -163,10 +201,30 @@ public class CompanyController {
     }
 
     private Long getCurrentCompanyIdFromAuth() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof Long) {
-            return (Long) auth.getPrincipal();
+        return currentActor.requireCompanyId();
+    }
+
+    private ResponseEntity<LoginResponse> respondToLogin(LoginRequest request,
+                                                         boolean adminLogin,
+                                                         HttpServletRequest httpRequest,
+                                                         HttpServletResponse httpResponse) {
+        String username = request != null ? request.getUsername() : null;
+        try {
+            loginGuard.assertAllowed(username);
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(new LoginResponse(false, ex.getReason(), null));
         }
-        throw new IllegalStateException("Kimlik doğrulanamadı.");
+        LoginResponse response = companyService.login(request, adminLogin);
+        if (response.isSuccess()) {
+            loginGuard.recordSuccess(username);
+            if (response.getToken() != null && !response.getToken().isBlank()) {
+                authCookie.write(httpRequest, httpResponse, response.getToken());
+                response.setToken(null);
+            }
+            return ResponseEntity.ok(response);
+        }
+        loginGuard.recordFailure(username);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }

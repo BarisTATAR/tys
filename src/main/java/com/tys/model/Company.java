@@ -1,5 +1,6 @@
 package com.tys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tys.enums.CompanyCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,6 +24,7 @@ public class Company {
     @Column(unique = true, nullable = false)      //işletme sahibine verilecek kullanıcı adı
     private String username;
 
+    @JsonIgnore
     @Column(nullable = false)      //işletme sahibine verilecek şifre
     private String password;
 

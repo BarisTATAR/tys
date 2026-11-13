@@ -109,13 +109,6 @@ tasks.withType(Javadoc) {
     options.encoding = 'UTF-8'
 }
 
-// Debug modunda çalıştırma için bootRun task'ını yapılandır
-tasks.named('bootRun') {
-    jvmArgs = [
-        '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
-    ]
-}
-
 // Duplicate JAR dosyaları için strateji belirle
 tasks.named('bootJar') {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

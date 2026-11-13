@@ -9,10 +9,6 @@ public class CompanyDto {
 
     private String username;
 
-    private String password;
-
-    private String adminPassword;
-
     private String name;
 
     private String address;

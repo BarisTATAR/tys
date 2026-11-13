@@ -4,6 +4,7 @@ import com.tys.model.Company;
 import com.tys.model.Guest;
 import com.tys.repository.CompanyRepository;
 import com.tys.repository.GuestRepository;
+import com.tys.validation.InputRules;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -70,7 +71,7 @@ public class ExcelImportService {
         for (Guest guest : guests) {
             String identityNumber = normalizeIdentityNumber(guest.getIdentityNumber());
             if (identityNumber == null) {
-                continue;
+                throw new IllegalArgumentException("TCKN gereklidir.");
             }
 
             guest.setIdentityNumber(identityNumber);
@@ -83,6 +84,19 @@ public class ExcelImportService {
             if (guestRepository.existsByIdentityNumber(identityNumber)) {
                 throw new IllegalArgumentException(
                         "Bu TC kimlik numarası sistemde zaten kayıtlı: " + identityNumber);
+            }
+
+            InputRules.guestFields(
+                    guest.getName(),
+                    guest.getSurname(),
+                    guest.getIdentityNumber(),
+                    guest.getPhoneNumber(),
+                    guest.getEmail(),
+                    guest.getPlateNumber(),
+                    null,
+                    null);
+            if (guest.getIdentityNumber() == null || guest.getIdentityNumber().isBlank()) {
+                throw new IllegalArgumentException("TCKN gereklidir.");
             }
         }
     }

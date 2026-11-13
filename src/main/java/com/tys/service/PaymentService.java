@@ -10,7 +10,9 @@ import com.tys.repository.ReservationRepository;
 import com.tys.request.CreatePaymentRequest;
 import com.tys.request.UpdatePaymentRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,13 +37,19 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
-    public void updatePayment(UpdatePaymentRequest request) {
+    public void updatePayment(UpdatePaymentRequest request, Long companyId) {
         Payment existingPayment = paymentRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Payment not found with Id: " + request.getId()));
+        assertPaymentCompany(existingPayment, companyId);
         paymentMapper.updateExistingPaymentWithPaymentRequest(request, existingPayment);
         paymentRepository.save(existingPayment);
     }
 
-    public PaymentDto getPaymentByReservationId(Long id) {
+    public PaymentDto getPaymentByReservationId(Long id, Long companyId) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        if (reservation.getCompany() == null || !companyId.equals(reservation.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
         List<Payment> payments = paymentRepository.findAllByReservationId(id);
         PaymentDto dto = new PaymentDto();
         dto.setReservationId(id);
@@ -69,6 +77,13 @@ public class PaymentService {
         }
         dto.setPaidAmount(paidAmount);
         return dto;
+    }
+
+    private void assertPaymentCompany(Payment payment, Long companyId) {
+        Reservation reservation = payment.getReservation();
+        if (reservation == null || reservation.getCompany() == null || !companyId.equals(reservation.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
     }
 
     public BigDecimal getPayments(LocalDate startDate, LocalDate endDate, PaymentType paymentType, Long companyId) {
