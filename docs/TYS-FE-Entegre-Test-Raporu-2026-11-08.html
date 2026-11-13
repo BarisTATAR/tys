@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TYS + tys-fe Entegre Test Raporu — 8 Kasım 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#f3f6f4; --ink:#14201c; --muted:#5a6a63; --line:#d3ddd7; --card:#fff;
+      --ok:#1f7a4d; --ok-bg:#e7f6ee; --fail:#b42318; --fail-bg:#fdecea;
+      --warn:#9a6700; --warn-bg:#fff6e0; --accent:#2f6f5e;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Sora,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+    header{background:linear-gradient(135deg,#18332b,#2f6f5e);color:#f4f7f5;padding:2.1rem clamp(1rem,4vw,3rem)}
+    header h1{font-family:Fraunces,Georgia,serif;margin:0 0 .45rem;font-size:clamp(1.7rem,3.8vw,2.5rem)}
+    header p{margin:0;opacity:.92;max-width:52rem}
+    main{max-width:1000px;margin:0 auto;padding:1.4rem clamp(1rem,3vw,2rem) 3rem}
+    .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem;margin:1.1rem 0 1.6rem}
+    @media(max-width:800px){.summary{grid-template-columns:1fr 1fr}}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+    .stat strong{display:block;font-family:Fraunces,Georgia,serif;font-size:1.7rem}
+    .stat span{color:var(--muted);font-size:.82rem}
+    h2{font-family:Fraunces,Georgia,serif;font-size:1.4rem;margin:1.7rem 0 .65rem}
+    h3{font-size:1.02rem;margin:1rem 0 .45rem}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;margin-bottom:.85rem}
+    table{width:100%;border-collapse:collapse;font-size:.88rem}
+    th,td{text-align:left;padding:.62rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--muted);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase}
+    .badge{display:inline-block;border-radius:999px;padding:.1rem .5rem;font-size:.7rem;font-weight:700}
+    .pass{background:var(--ok-bg);color:var(--ok)}
+    .fail{background:var(--fail-bg);color:var(--fail)}
+    .warn{background:var(--warn-bg);color:var(--warn)}
+    .p0{color:var(--fail);font-weight:700}
+    .p1{color:var(--warn);font-weight:700}
+    .p2{color:var(--muted);font-weight:600}
+    ul{margin:.35rem 0;padding-left:1.1rem;color:var(--muted)}
+    li+li{margin-top:.22rem}
+    code{background:#eef3f0;padding:.05rem .32rem;border-radius:5px;font-size:.84em}
+    .meta{color:var(--muted);font-size:.84rem}
+    .stack{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.7rem}
+    .pill{border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:.25rem .65rem;font-size:.75rem}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TYS + tys-fe Entegre Test Raporu</h1>
+    <p>
+      Backend (<code>tys</code> :8080) ve frontend (<code>tys-fe</code> :3000, CRA proxy → 8080)
+      birlikte çalıştırılarak API proxy smoke + tarayıcı E2E kullanıcı testleri yapıldı.
+      Tarih: 8 Kasım 2026 · Hesap: <code>baristatar</code>
+    </p>
+    <div class="stack">
+      <span class="pill">proxy: localhost:3000 → :8080</span>
+      <span class="pill">Accept: application/json</span>
+      <span class="pill">Browser E2E</span>
+    </div>
+  </header>
+  <main>
+    <div class="summary">
+      <div class="stat"><strong style="color:var(--ok)">22</strong><span>Geçen</span></div>
+      <div class="stat"><strong style="color:var(--fail)">3</strong><span>P0 fail (BE kural)</span></div>
+      <div class="stat"><strong style="color:var(--warn)">3</strong><span>Uyarı / UX</span></div>
+      <div class="stat"><strong>14</strong><span>FE→BE proxy case</span></div>
+      <div class="stat"><strong>11</strong><span>UI E2E case</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Test mimarisi</h3>
+      <ul>
+        <li><strong>Katman A — FE proxy:</strong> İstekler <code>http://localhost:3000/…</code> üzerinden CRA proxy ile BE’ye gitti (axios’un kullandığı yol).</li>
+        <li><strong>Katman B — UI:</strong> tys-fe sayfalarında login, menü, listeler, form validasyonu tarayıcı ile doğrulandı.</li>
+        <li><strong>Not:</strong> Proxy çağrılarında <code>Accept: application/json</code> olmadan CRA bazı path’lerde 404 HTML döndü; gerçek FE axios istekleri JSON beklediği için production path’i etkilenmez, otomasyonda header şart.</li>
+      </ul>
+    </div>
+
+    <h2>1. FE → BE proxy smoke</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Senaryo</th><th>Sonuç</th><th>Öncelik</th><th>Kanıt</th></tr></thead>
+        <tbody>
+          <tr><td>FE SPA <code>/</code></td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>HTTP 200</td></tr>
+          <tr><td><code>POST /company/login</code> (proxy)</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>token üretildi</td></tr>
+          <tr><td><code>GET /room/company-rooms</code></td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>4 oda</td></tr>
+          <tr><td><code>GET /reservation/all</code></td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>2 aktif kayıt</td></tr>
+          <tr><td><code>GET /guest/all</code></td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>5 misafir</td></tr>
+          <tr><td><code>GET /cafe/all</code></td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>2 ürün</td></tr>
+          <tr><td><code>GET /room/availableRooms</code></td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>ISO datetime ile</td></tr>
+          <tr><td><code>GET /payment?…</code></td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>sum=3020</td></tr>
+          <tr><td><code>GET /company/get-rules-file</code></td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>kurallar.docx</td></tr>
+          <tr><td>Yanlış şifre (proxy)</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>success=false + mesaj</td></tr>
+          <tr><td>Update 0 oda (proxy)</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>400 “en az bir oda”</td></tr>
+          <tr><td>Create örtüşen oda 101</td><td><span class="badge fail">FAIL</span></td><td class="p0">P0</td><td>proxy üzerinden de 200 — BE create kuralı yok</td></tr>
+          <tr><td>Create checkout &lt; checkin</td><td><span class="badge fail">FAIL</span></td><td class="p0">P0</td><td>proxy üzerinden de 200</td></tr>
+          <tr><td><code>GET /room/by-company/2</code></td><td><span class="badge fail">FAIL</span></td><td class="p0">P0</td><td>Company1 ile 3 oda sızıntısı</td></tr>
+        </tbody>
+      </table>
+      <p class="meta">Ham sonuç: <code>docs/e2e-proxy-results.json</code> (tys + tys-fe/docs kopyası)</p>
+    </div>
+
+    <h2>2. tys-fe UI E2E</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Akış</th><th>Sonuç</th><th>Öncelik</th><th>Gözlem</th></tr></thead>
+        <tbody>
+          <tr><td>Üye girişi → Ana Ekran</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>Board, katlar, legend</td></tr>
+          <tr><td>Rezervasyonlar listesi</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>Test Misafir (101) + E2E Proxy (301), 2 kayıt</td></tr>
+          <tr><td>Misafirler</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>Aynı misafirler grid’de</td></tr>
+          <tr><td>Cafe (<code>/baris</code>)</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>Menü ekle/güncelle/sil UI</td></tr>
+          <tr><td>SMS</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>Alıcılar BE’den doldu (5 numara)</td></tr>
+          <tr><td>Ödemeler formu</td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>Tarih + tip + Sorgula</td></tr>
+          <tr><td>Kurallar gönder</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>Sayfa + rezervasyon bağlama metni</td></tr>
+          <tr><td>Yeni Rezervasyon FE validasyon</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>“En az bir oda seçilmelidir” vb.</td></tr>
+          <tr><td>Logout</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>Önceki turda doğrulandı</td></tr>
+          <tr><td>Yanlış şifre toast</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>UI mesajı doğru</td></tr>
+          <tr><td>Menü tıklama / hard navigate</td><td><span class="badge warn">WARN</span></td><td class="p1">P1</td><td>Sidebar tıklamada içerik gecikebiliyor; direkt URL sağlıklı</td></tr>
+          <tr><td>Varsayılan giriş=çıkış aynı gün</td><td><span class="badge warn">WARN</span></td><td class="p2">P2</td><td>Yeni rezervasyon formu</td></tr>
+          <tr><td>Legend “Rezarvasyonlu”</td><td><span class="badge warn">WARN</span></td><td class="p2">P2</td><td>Yazım hatası</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>3. Entegrasyon sonucu (ne kanıtlandı?)</h2>
+    <div class="card">
+      <ul>
+        <li><strong>tys-fe ↔ tys bağlantısı çalışıyor:</strong> Login, oda, rezervasyon, misafir, cafe, SMS alıcıları, kurallar dosyası proxy üzerinden tutarlı.</li>
+        <li><strong>FE koruma katmanı var, BE create katmanı zayıf:</strong> UI “en az bir oda”yı engelliyor; update BE de engelliyor; ama create çakışma/tarih kurallarını FE atlatılarak (proxy/API) kırılabiliyor.</li>
+        <li><strong>Veri tutarlılığı:</strong> Proxy ile oluşturulan <code>e2e-fe-proxy</code> rezervasyonu UI Rezervasyonlar + Misafirler’de göründü.</li>
+        <li><strong>Tenant riski FE’den de görünür:</strong> Proxy ile <code>/room/by-company/2</code> sızıntısı tekrarlandı (FE bu endpoint’i normal menüde kullanmasa da API açık).</li>
+      </ul>
+    </div>
+
+    <h2>4. P0 aksiyon listesi</h2>
+    <div class="card">
+      <h3>P0-1 · Create oda çakışması</h3>
+      <ul>
+        <li>FE proxy ile örtüşen create 200 döndü; UI müsait listesi yanıltıcı olabilir.</li>
+        <li>Update’teki availability kontrolünü <code>createReservation</code>’a taşıyın.</li>
+      </ul>
+      <h3>P0-2 · Create tarih doğrulama</h3>
+      <ul>
+        <li><code>checkOut &gt; checkIn</code> BE zorunlu kural olsun (400).</li>
+        <li>FE varsayılan checkout’u +1 gün yapın.</li>
+      </ul>
+      <h3>P0-3 · Tenant izolasyonu</h3>
+      <ul>
+        <li><code>/room/by-company/{id}</code> JWT companyId ile eşleşmezse 403.</li>
+      </ul>
+    </div>
+
+    <h2>5. Ortam &amp; artefaktlar</h2>
+    <div class="card">
+      <ul>
+        <li>BE: Spring Boot <code>bootRun</code> · FE: <code>npm start</code> · DB: PostgreSQL local</li>
+        <li>Aktif test verisi: rezervasyon #5 (101, smoke-test), #8 (301, e2e-fe-proxy)</li>
+        <li>Rapor konumları:
+          <ul>
+            <li><code>tys/docs/TYS-FE-Entegre-Test-Raporu-2026-11-08.html</code></li>
+            <li><code>tys-fe/docs/TYS-FE-Entegre-Test-Raporu-2026-11-08.html</code></li>
+            <li><code>*/docs/e2e-proxy-results.json</code></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

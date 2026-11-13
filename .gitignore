@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### IDE Build Output ###
+bin/
+
+### Yerel sırlar (JWT, veritabanı, SMS, KBS)
+src/main/resources/application-local.properties
+
+

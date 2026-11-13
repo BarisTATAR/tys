@@ -4,7 +4,8 @@ public enum PaymentType {
 
     CASH("Nakit"),
     CREDIT_CARD("Kredi Kartı"),
-    DEBIT_CARD("Banka Kartı");
+    DEBIT_CARD("Banka Kartı"),
+    ALL("Toplam");
 
     private final String paymentType;
 
