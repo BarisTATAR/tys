@@ -31,8 +31,14 @@ public class Payment {
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
-    @Column(name = "payment_type")
-    private PaymentType paymentType;
+    @Column(name = "advance_payment_type")
+    private PaymentType advancePaymentType;
+
+    @Column(name = "close_payment_type")
+    private PaymentType closePaymentType;
+
+    @Column(name = "paid_amount")
+    private BigDecimal paidAmount;
 
     @ManyToOne
     @JoinColumn(name = "reservation_id", nullable = false)

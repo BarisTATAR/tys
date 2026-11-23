@@ -1,5 +1,6 @@
 package com.tys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tys.enums.CompanyCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,11 +21,21 @@ public class Company {
     @Column(name = "id")
     private Long id;
 
+    @Column(unique = true, nullable = false)      //işletme sahibine verilecek kullanıcı adı
+    private String username;
+
+    @JsonIgnore
+    @Column(nullable = false)      //işletme sahibine verilecek şifre
+    private String password;
+
     @Column(name = "name")
     private String name;
 
     @Column(name = "address")
     private String address;
+
+    @Column(name = "google_comments_url" , columnDefinition = "TEXT")
+    private String googleCommentsUrl;
 
     @Column(name = "category")
     private CompanyCategory category;
@@ -52,5 +63,11 @@ public class Company {
 
     @OneToMany(mappedBy = "company")
     private List<Room> roomList;
+
+    @OneToMany(mappedBy = "company")
+    private List<Reservation> reservations;
+
+    @OneToOne(mappedBy = "company")
+    private Kbs kbs;
 }
 

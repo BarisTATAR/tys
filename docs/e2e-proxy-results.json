@@ -1,0 +1,100 @@
+[
+    {
+        "name":  "FE SPA serves",
+        "pass":  true,
+        "detail":  "HTTP 200",
+        "severity":  "P0",
+        "layer":  "tys-fe"
+    },
+    {
+        "name":  "Login via FE proxy",
+        "pass":  true,
+        "detail":  "success=True",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /room/company-rooms",
+        "pass":  true,
+        "detail":  "count=4",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /reservation/all",
+        "pass":  true,
+        "detail":  "count=2",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /guest/all",
+        "pass":  true,
+        "detail":  "count=5",
+        "severity":  "P1",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /cafe/all",
+        "pass":  true,
+        "detail":  "count=2",
+        "severity":  "P2",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /room/availableRooms",
+        "pass":  true,
+        "detail":  "count=4",
+        "severity":  "P1",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET /payment",
+        "pass":  true,
+        "detail":  "sum=3020.00",
+        "severity":  "P2",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy GET rules file",
+        "pass":  true,
+        "detail":  "file=kurallar.docx",
+        "severity":  "P2",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy wrong password",
+        "pass":  true,
+        "detail":  "Kullanıcı adı veya şifre hatalı.",
+        "severity":  "P1",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy tenant isolation",
+        "pass":  false,
+        "detail":  "LEAK count=3",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy create overlapping room 101",
+        "pass":  false,
+        "detail":  "HTTP 200 — çakışma engellenmedi",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy create checkout\u003ccheckin",
+        "pass":  false,
+        "detail":  "HTTP 200 — tarih kuralı yok",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    },
+    {
+        "name":  "Proxy update 0 rooms",
+        "pass":  true,
+        "detail":  "HTTP 400 {\"message\":\"Rezervasyonda en az bir oda olmalıdır.\"}",
+        "severity":  "P0",
+        "layer":  "FE→BE proxy"
+    }
+]

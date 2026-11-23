@@ -1,0 +1,107 @@
+[
+    {
+        "name":  "Auth guard: /reservation/all without token",
+        "pass":  true,
+        "detail":  "HTTP 401",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "Public rules: invalid token",
+        "pass":  true,
+        "detail":  "HTTP 401",
+        "severity":  "P2",
+        "type":  "software"
+    },
+    {
+        "name":  "Company login (baristatar)",
+        "pass":  true,
+        "detail":  "tokenLen=167; keys=success,message,token",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "Company login wrong password",
+        "pass":  false,
+        "detail":  "Expected error, got 200",
+        "severity":  "P1",
+        "type":  "software"
+    },
+    {
+        "name":  "Admin login",
+        "pass":  true,
+        "detail":  "tokenLen=161",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /room/company-rooms",
+        "pass":  true,
+        "detail":  "count=4",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /reservation/all",
+        "pass":  true,
+        "detail":  "count=0",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /room/availableRooms",
+        "pass":  false,
+        "detail":  "The remote server returned an error: (401) Unauthorized.",
+        "severity":  "P1",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /guest/all",
+        "pass":  true,
+        "detail":  "count=3",
+        "severity":  "P1",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /cafe/all",
+        "pass":  true,
+        "detail":  "count=2",
+        "severity":  "P2",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /payment",
+        "pass":  false,
+        "detail":  "The remote server returned an error: (401) Unauthorized.",
+        "severity":  "P2",
+        "type":  "software"
+    },
+    {
+        "name":  "GET /company/get-rules-file",
+        "pass":  true,
+        "detail":  "keys=id,companyId,rulesText,fileName,contentType,createdAt",
+        "severity":  "P2",
+        "type":  "software"
+    },
+    {
+        "name":  "Isolation: company1 GET rooms of company2",
+        "pass":  false,
+        "detail":  "LEAK count=3 — company scoping eksik",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "Constraint: update reservation with 0 rooms",
+        "pass":  true,
+        "detail":  "SKIP no reservations",
+        "severity":  "P0",
+        "type":  "software"
+    },
+    {
+        "name":  "company/admin_login role claim",
+        "pass":  true,
+        "detail":  "role=COMPANY (ADMIN beklenmez)",
+        "severity":  "P1",
+        "type":  "software"
+    }
+]
