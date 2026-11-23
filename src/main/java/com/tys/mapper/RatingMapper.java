@@ -8,6 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RatingMapper {
 
-    @Mapping(source = "id", target = "id", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Rating createRatingRequestToEntity(CreateRatingRequest createRatingRequest);
 }

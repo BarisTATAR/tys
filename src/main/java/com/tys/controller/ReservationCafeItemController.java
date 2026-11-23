@@ -2,6 +2,7 @@ package com.tys.controller;
 
 import com.tys.dto.ReservationCafeItemDto;
 import com.tys.request.UpdateReservationCafeItemRequest;
+import com.tys.security.CurrentActor;
 import com.tys.service.ReservationCafeItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,11 @@ import java.util.Map;
 public class ReservationCafeItemController {
 
     private final ReservationCafeItemService reservationCafeItemService;
+    private final CurrentActor currentActor;
 
     @PostMapping("/add")
     public ResponseEntity<ReservationCafeItemDto> addCafeItem(@RequestBody ReservationCafeItemDto dto) {
-        return ResponseEntity.ok(reservationCafeItemService.addCafeItemToReservation(dto));
+        return ResponseEntity.ok(reservationCafeItemService.addCafeItemToReservation(dto, currentActor.requireCompanyId()));
     }
 
     /**
@@ -29,7 +31,7 @@ public class ReservationCafeItemController {
      */
     @PutMapping("/update")
     public ResponseEntity<ReservationCafeItemDto> updateCafeItem(@RequestBody UpdateReservationCafeItemRequest request) {
-        return ResponseEntity.ok(reservationCafeItemService.updateCafeItemCount(request));
+        return ResponseEntity.ok(reservationCafeItemService.updateCafeItemCount(request, currentActor.requireCompanyId()));
     }
 
     /**
@@ -39,24 +41,28 @@ public class ReservationCafeItemController {
     public ResponseEntity<List<ReservationCafeItemDto>> updateCafeItemsBatch(
             @PathVariable("reservationId") Long reservationId,
             @RequestBody List<UpdateReservationCafeItemRequest> requests) {
-        return ResponseEntity.ok(reservationCafeItemService.updateCafeItemCounts(reservationId, requests));
+        return ResponseEntity.ok(reservationCafeItemService.updateCafeItemCounts(
+                reservationId, requests, currentActor.requireCompanyId()));
     }
 
     @GetMapping("/list/{reservationId}")
     public ResponseEntity<Map<String, Integer>> getReservationCafeItemListByReservationId(
             @PathVariable("reservationId") Long reservationId) {
-        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeItemListByReservationId(reservationId));
+        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeItemList(
+                reservationId, currentActor.requireCompanyId()));
     }
 
     @GetMapping("/details/{reservationId}")
     public ResponseEntity<List<ReservationCafeItemDto>> getReservationCafeItemDetails(
             @PathVariable("reservationId") Long reservationId) {
-        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeItemDetailsByReservationId(reservationId));
+        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeItemDetails(
+                reservationId, currentActor.requireCompanyId()));
     }
 
     @GetMapping("/{reservationId}")
     public ResponseEntity<BigDecimal> getReservationCafeItemByReservationId(
             @PathVariable("reservationId") Long reservationId) {
-        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeAmountByReservationId(reservationId));
+        return ResponseEntity.ok(reservationCafeItemService.getReservationCafeAmount(
+                reservationId, currentActor.requireCompanyId()));
     }
 }

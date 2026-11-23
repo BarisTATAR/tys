@@ -37,5 +37,8 @@ bin/
 
 ### Yerel sırlar (JWT, veritabanı, SMS, KBS)
 src/main/resources/application-local.properties
+.env
+.env.*
+!.env.example
 
 

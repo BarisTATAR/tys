@@ -45,6 +45,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ReservationService {
@@ -86,7 +87,9 @@ public class ReservationService {
     public String updateReservation(UpdateReservationRequest request, Long companyId) throws Exception {
         Reservation existingReservation = reservationRepository.findById(request.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
         assertReservationCompany(existingReservation, companyId);
-        validateUpdateInput(request);
+        validateUpdateInput(request, companyId);
+        LocalDate previousCheckIn = ReservationDateUtils.toLocalDate(existingReservation.getCheckInDate());
+        LocalDate previousCheckOut = ReservationDateUtils.toLocalDate(existingReservation.getCheckOutDate());
         boolean checkingOut = request.getReservationStatus() == ReservationStatus.CHECK_OUT_DONE
                 && existingReservation.getReservationStatus() != ReservationStatus.CHECK_OUT_DONE;
         boolean checkingIn = request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE
@@ -124,6 +127,16 @@ public class ReservationService {
         if (request.getCheckOutDate() != null) {
             existingReservation.setCheckOutDate(ReservationDateUtils.toStartOfDay(request.getCheckOutDate()));
         }
+        LocalDate newCheckIn = ReservationDateUtils.toLocalDate(existingReservation.getCheckInDate());
+        LocalDate newCheckOut = ReservationDateUtils.toLocalDate(existingReservation.getCheckOutDate());
+        boolean datesChanged = !Objects.equals(previousCheckIn, newCheckIn) || !Objects.equals(previousCheckOut, newCheckOut);
+        // Aynı gün giriş-çıkış (günlük kullanım) serbest; yalnızca çıkış < giriş engellenir
+        if (datesChanged && (newCheckIn == null || newCheckOut == null || newCheckOut.isBefore(newCheckIn))) {
+            throw new RuntimeException("Geçerli giriş/çıkış tarihleri gereklidir.");
+        }
+        // Check-out yapılmış rezervasyon odayı işgal etmez; tarih değişince diğer durumlarda mevcut odalar da yeniden denetlenir
+        boolean recheckCurrentRooms = datesChanged
+                && existingReservation.getReservationStatus() != ReservationStatus.CHECK_OUT_DONE;
         if (request.getGuests() != null) {
             if (existingReservation.getGuests() != null) {
                 existingReservation.getGuests().size();
@@ -166,7 +179,9 @@ public class ReservationService {
             if (existingReservation.getRooms() != null) {
                 existingReservation.getRooms().size();
             }
-            syncReservationRooms(existingReservation, request.getRoomList());
+            syncReservationRooms(existingReservation, request.getRoomList(), recheckCurrentRooms);
+        } else if (recheckCurrentRooms) {
+            assertCurrentRoomsAvailable(existingReservation);
         }
         InputRules.stayCounts(
                 request.getAdultGuestNumber() != null ? request.getAdultGuestNumber() : existingReservation.getAdultGuestNumber(),
@@ -196,7 +211,7 @@ public class ReservationService {
     /**
      * Check-in için adı ve soyadı girilmiş misafir sayısı, yetişkin ve çocuk toplamına eşit olmalıdır.
      */
-    private void validateUpdateInput(UpdateReservationRequest request) {
+    private void validateUpdateInput(UpdateReservationRequest request, Long companyId) {
         if (request.getPaymentList() != null) {
             for (Payment payment : request.getPaymentList()) {
                 if (payment != null) {
@@ -214,11 +229,11 @@ public class ReservationService {
             String previousIdentity = null;
             String previousPhone = null;
             if (guest.getId() != null) {
-                Guest stored = guestRepository.findById(guest.getId()).orElse(null);
-                if (stored != null) {
-                    previousIdentity = stored.getIdentityNumber();
-                    previousPhone = stored.getPhoneNumber();
-                }
+                Guest stored = guestRepository.findById(guest.getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
+                assertGuestCompany(stored, companyId);
+                previousIdentity = stored.getIdentityNumber();
+                previousPhone = stored.getPhoneNumber();
             }
             InputRules.guestFields(
                     guest.getName(),
@@ -287,6 +302,8 @@ public class ReservationService {
      * Mevcut misafirleri managed entity üzerinden günceller / yenileri kaydeder.
      */
     private void syncReservationGuests(Reservation reservation, List<Guest> requestGuests) {
+        Company company = reservation.getCompany();
+        Long companyId = company != null ? company.getId() : null;
         List<Guest> managedGuests = new ArrayList<>();
         for (Guest incoming : requestGuests) {
             if (incoming == null) {
@@ -295,7 +312,12 @@ public class ReservationService {
             Guest managed;
             if (incoming.getId() != null) {
                 managed = guestRepository.findById(incoming.getId())
-                        .orElseThrow(() -> new RuntimeException("Misafir bulunamadı. Id: " + incoming.getId()));
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
+                // Başka işletmenin misafiri id ile bu rezervasyona bağlanamaz / değiştirilemez
+                assertGuestCompany(managed, companyId);
+                if (managed.getCompany() == null) {
+                    managed.setCompany(company);
+                }
                 if (incoming.getName() != null) {
                     managed.setName(incoming.getName());
                 }
@@ -324,6 +346,9 @@ public class ReservationService {
                     managed.setAddress(incoming.getAddress());
                 }
             } else {
+                // İstekle gelen company/reservations alanlarına güvenilmez; yeni misafir rezervasyonun işletmesine aittir
+                incoming.setCompany(company);
+                incoming.setReservations(new ArrayList<>());
                 managed = guestRepository.save(incoming);
             }
             managedGuests.add(managed);
@@ -337,7 +362,60 @@ public class ReservationService {
         reservation.getGuests().addAll(managedGuests);
     }
 
-    private void syncReservationRooms(Reservation reservation, List<CreateRoomRequest> roomRequests) {
+    /**
+     * Misafir bu işletmeye aitse (işletme kaydı ya da işletmenin bir rezervasyonu üzerinden) geçer; değilse 403.
+     */
+    private void assertGuestCompany(Guest guest, Long companyId) {
+        if (companyId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
+        if (guest.getCompany() != null) {
+            if (companyId.equals(guest.getCompany().getId())) {
+                return;
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
+        if (guest.getReservations() != null) {
+            for (Reservation linked : guest.getReservations()) {
+                if (linked.getCompany() != null && companyId.equals(linked.getCompany().getId())) {
+                    return;
+                }
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+    }
+
+    /**
+     * Oda listesi gönderilmeden tarih değiştirildiğinde rezervasyondaki odaların yeni tarihlerde boş olduğunu doğrular.
+     */
+    private void assertCurrentRoomsAvailable(Reservation reservation) {
+        if (reservation.getRooms() == null || reservation.getRooms().isEmpty()) {
+            return;
+        }
+        Long companyId = reservation.getCompany() != null ? reservation.getCompany().getId() : null;
+        if (companyId == null) {
+            throw new RuntimeException("Rezervasyonun işletme bilgisi bulunamadı.");
+        }
+        LocalDate reqIn = ReservationDateUtils.toLocalDate(reservation.getCheckInDate());
+        LocalDate reqOut = ReservationDateUtils.toLocalDate(reservation.getCheckOutDate());
+        List<Long> availableIds = roomService
+                .getAvailableRoomsExcludingReservation(reqIn.atStartOfDay(), reqOut.atStartOfDay(), companyId, reservation.getId())
+                .stream()
+                .map(RoomDto::getId)
+                .toList();
+        for (Room room : reservation.getRooms()) {
+            if (room != null && !availableIds.contains(room.getId())) {
+                throw new RuntimeException(
+                        "Oda " + room.getNumber() + " seçilen tarihlerde müsait değil (başka rezervasyon var).");
+            }
+        }
+    }
+
+    /**
+     * @param recheckCurrentRooms true ise rezervasyonda zaten bulunan odalar da müsaitlik denetiminden geçer
+     *                            (tarih değiştiğinde zorunludur; yeni rezervasyonda etkisizdir).
+     */
+    private void syncReservationRooms(Reservation reservation, List<CreateRoomRequest> roomRequests, boolean recheckCurrentRooms) {
         if (roomRequests == null || roomRequests.isEmpty()) {
             throw new RuntimeException("Rezervasyonda en az bir oda olmalıdır.");
         }
@@ -380,7 +458,7 @@ public class ReservationService {
 
             boolean alreadyOnReservation = currentRoomIds.contains(room.getId());
             boolean available = availableIds.contains(room.getId());
-            if (!alreadyOnReservation && !available) {
+            if (!available && (!alreadyOnReservation || recheckCurrentRooms)) {
                 throw new RuntimeException(
                         "Oda " + room.getNumber() + " seçilen tarihlerde müsait değil (başka rezervasyon var).");
             }
@@ -601,15 +679,16 @@ public class ReservationService {
     }
 
     private void isAllPaymentsCompleted(UpdateReservationRequest request, Reservation existingReservation) {
-        // Rezervasyona bağlı tüm ödemeleri al
-        List<Payment> payments = paymentRepository.findAllByReservationId(existingReservation.getId());
+        // Rezervasyona bağlı tüm ödemeleri oluşturulma sırasıyla al; ilk kayıt ana ödemedir (toplam tutar + kapora)
+        List<Payment> payments = paymentRepository.findAllByReservationIdOrderByIdAsc(existingReservation.getId());
         if (payments == null || payments.isEmpty()) {
             throw new RuntimeException("Ödeme kaydı olmadan check-out yapılamaz.");
         }
+        Payment mainPayment = payments.get(0);
 
         // Toplam ödenen tutarı hesapla
-        BigDecimal totalPaid = payments.get(0).getAdvancePayment() != null
-                ? payments.get(0).getAdvancePayment()
+        BigDecimal totalPaid = mainPayment.getAdvancePayment() != null
+                ? mainPayment.getAdvancePayment()
                 : BigDecimal.ZERO;
         for (Payment p : payments) {
             if (p.getPaidAmount() != null) {
@@ -617,9 +696,9 @@ public class ReservationService {
             }
         }
 
-        // İlk ödemenin tutarı boş veya 0 ise borç 0 kabul edilir.
-        BigDecimal reservationAmount = payments.get(0).getAmount() != null
-                ? payments.get(0).getAmount()
+        // Ana ödemenin tutarı boş veya 0 ise borç 0 kabul edilir.
+        BigDecimal reservationAmount = mainPayment.getAmount() != null
+                ? mainPayment.getAmount()
                 : BigDecimal.ZERO;
         BigDecimal cafeAmount = reservationCafeItemService.getReservationCafeAmountByReservationId(
                 existingReservation.getId());
@@ -683,7 +762,7 @@ public class ReservationService {
         }
 
         // P0: tarih (checkOut > checkIn) + oda çakışması + min 1 oda
-        syncReservationRooms(reservation, request.getRoomList());
+        syncReservationRooms(reservation, request.getRoomList(), true);
         InputRules.stayCounts(
                 request.getAdultGuestNumber(),
                 request.getChildGuestNumber(),
@@ -691,7 +770,10 @@ public class ReservationService {
                 totalRoomCapacity(reservation));
 
         if (request.getGuestList() != null && !request.getGuestList().isEmpty()) {
-            reservation.setGuests(guestMapper.toEntityList(request.getGuestList()));
+            List<Guest> guests = guestMapper.toEntityList(request.getGuestList());
+            // Misafir sahipliği: rezervasyonla eklenen misafir işletmeye aittir (tenant kontrolleri bu alana dayanır)
+            guests.forEach(guest -> guest.setCompany(company));
+            reservation.setGuests(guests);
         } else {
             reservation.setGuests(new ArrayList<>());
         }

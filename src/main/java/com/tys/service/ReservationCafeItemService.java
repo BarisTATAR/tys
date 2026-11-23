@@ -10,14 +10,20 @@ import com.tys.repository.ReservationCafeItemRepository;
 import com.tys.repository.ReservationRepository;
 import com.tys.request.UpdateReservationCafeItemRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Rezervasyon kafe hesabı. Dışarı açık tüm işlemler oturumdaki işletmeyle (companyId) sınırlıdır:
+ * rezervasyon ve kafe ürünü aynı işletmeye ait olmalıdır.
+ */
 @Service
 @RequiredArgsConstructor
 public class ReservationCafeItemService {
@@ -28,12 +34,17 @@ public class ReservationCafeItemService {
     private final ReservationCafeItemMapper mapper;
 
     @Transactional
-    public ReservationCafeItemDto addCafeItemToReservation(ReservationCafeItemDto dto) {
-        Reservation reservation = reservationRepository.findById(dto.getReservationId())
-                .orElseThrow(() -> new RuntimeException("Rezervasyon bulunamadı"));
+    public ReservationCafeItemDto addCafeItemToReservation(ReservationCafeItemDto dto, Long companyId) {
+        if (dto.getReservationId() == null || dto.getCafeId() == null) {
+            throw new IllegalArgumentException("Rezervasyon ve cafe ürünü seçilmelidir.");
+        }
+        Reservation reservation = requireReservationOfCompany(dto.getReservationId(), companyId);
 
         Cafe cafe = cafeRepository.findById(dto.getCafeId())
-                .orElseThrow(() -> new RuntimeException("Cafe ürünü bulunamadı"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cafe ürünü bulunamadı."));
+        if (!companyId.equals(cafe.getCompanyId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
 
         int addCount = dto.getCount() != null ? dto.getCount() : 0;
         if (addCount <= 0) {
@@ -59,53 +70,55 @@ public class ReservationCafeItemService {
      * count &lt;= 0 ise kalem silinir (null döner).
      */
     @Transactional
-    public ReservationCafeItemDto updateCafeItemCount(UpdateReservationCafeItemRequest request) {
+    public ReservationCafeItemDto updateCafeItemCount(UpdateReservationCafeItemRequest request, Long companyId) {
         ReservationCafeItem item = findItemForUpdate(request);
-
-        Integer newCount = request.getCount();
-        if (newCount == null || newCount <= 0) {
-            reservationCafeItemRepository.delete(item);
-            return null;
-        }
-
-        item.setCount(newCount);
-        return mapper.toDto(reservationCafeItemRepository.save(item));
+        assertItemOfCompany(item, companyId);
+        return applyCount(item, request.getCount());
     }
 
     /**
      * Hesap ekranındaki Güncelle butonu: rezervasyona ait birden fazla cafe adedini bir kerede günceller.
      */
     @Transactional
-    public List<ReservationCafeItemDto> updateCafeItemCounts(Long reservationId, List<UpdateReservationCafeItemRequest> requests) {
-        if (!reservationRepository.existsById(reservationId)) {
-            throw new RuntimeException("Rezervasyon bulunamadı");
-        }
+    public List<ReservationCafeItemDto> updateCafeItemCounts(Long reservationId, List<UpdateReservationCafeItemRequest> requests, Long companyId) {
+        requireReservationOfCompany(reservationId, companyId);
         if (requests == null || requests.isEmpty()) {
             return getReservationCafeItemDetailsByReservationId(reservationId);
         }
 
         for (UpdateReservationCafeItemRequest request : requests) {
             request.setReservationId(reservationId);
-            updateCafeItemCount(request);
+            ReservationCafeItem item = findItemForUpdate(request);
+            // Kalem id ile bulunduysa bile yoldaki rezervasyona ait olmalı
+            if (item.getReservation() == null || !reservationId.equals(item.getReservation().getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+            }
+            applyCount(item, request.getCount());
         }
         return getReservationCafeItemDetailsByReservationId(reservationId);
     }
 
-    private ReservationCafeItem findItemForUpdate(UpdateReservationCafeItemRequest request) {
-        if (request.getId() != null) {
-            return reservationCafeItemRepository.findById(request.getId())
-                    .orElseThrow(() -> new RuntimeException("Cafe kalemi bulunamadı: " + request.getId()));
-        }
-        if (request.getReservationId() == null || request.getCafeId() == null) {
-            throw new IllegalArgumentException("Güncelleme için id veya reservationId + cafeId zorunludur.");
-        }
-        return reservationCafeItemRepository
-                .findByReservation_IdAndCafe_Id(request.getReservationId(), request.getCafeId())
-                .orElseThrow(() -> new RuntimeException(
-                        "Bu rezervasyonda cafe ürünü bulunamadı. reservationId="
-                                + request.getReservationId() + ", cafeId=" + request.getCafeId()));
+    @Transactional(readOnly = true)
+    public BigDecimal getReservationCafeAmount(Long reservationId, Long companyId) {
+        requireReservationOfCompany(reservationId, companyId);
+        return getReservationCafeAmountByReservationId(reservationId);
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getReservationCafeItemList(Long reservationId, Long companyId) {
+        requireReservationOfCompany(reservationId, companyId);
+        return getReservationCafeItemListByReservationId(reservationId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationCafeItemDto> getReservationCafeItemDetails(Long reservationId, Long companyId) {
+        requireReservationOfCompany(reservationId, companyId);
+        return getReservationCafeItemDetailsByReservationId(reservationId);
+    }
+
+    /**
+     * Yalnız sunucu içi kullanım (check-out borç hesabı); yetki kontrolü çağıran tarafta yapılmıştır.
+     */
     @Transactional(readOnly = true)
     public BigDecimal getReservationCafeAmountByReservationId(Long reservationId) {
         return getReservationCafeItemDetailsByReservationId(reservationId).stream()
@@ -113,11 +126,51 @@ public class ReservationCafeItemService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /**
-     * Ürün adına göre adetleri toplar (aynı ürün birden fazla satırdaysa ezilmez).
-     */
-    @Transactional(readOnly = true)
-    public Map<String, Integer> getReservationCafeItemListByReservationId(Long reservationId) {
+    private ReservationCafeItemDto applyCount(ReservationCafeItem item, Integer newCount) {
+        if (newCount == null || newCount <= 0) {
+            reservationCafeItemRepository.delete(item);
+            return null;
+        }
+        item.setCount(newCount);
+        return mapper.toDto(reservationCafeItemRepository.save(item));
+    }
+
+    private Reservation requireReservationOfCompany(Long reservationId, Long companyId) {
+        if (reservationId == null) {
+            throw new IllegalArgumentException("Rezervasyon seçilmelidir.");
+        }
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rezervasyon bulunamadı."));
+        if (companyId == null || reservation.getCompany() == null
+                || !companyId.equals(reservation.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
+        return reservation;
+    }
+
+    private void assertItemOfCompany(ReservationCafeItem item, Long companyId) {
+        Reservation reservation = item.getReservation();
+        if (companyId == null || reservation == null || reservation.getCompany() == null
+                || !companyId.equals(reservation.getCompany().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+        }
+    }
+
+    private ReservationCafeItem findItemForUpdate(UpdateReservationCafeItemRequest request) {
+        if (request.getId() != null) {
+            return reservationCafeItemRepository.findById(request.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cafe kalemi bulunamadı."));
+        }
+        if (request.getReservationId() == null || request.getCafeId() == null) {
+            throw new IllegalArgumentException("Güncelleme için id veya reservationId + cafeId zorunludur.");
+        }
+        return reservationCafeItemRepository
+                .findByReservation_IdAndCafe_Id(request.getReservationId(), request.getCafeId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Bu rezervasyonda cafe ürünü bulunamadı."));
+    }
+
+    private Map<String, Integer> getReservationCafeItemListByReservationId(Long reservationId) {
         Map<String, Integer> cafeCountMap = new HashMap<>();
 
         for (ReservationCafeItemDto item : getReservationCafeItemDetailsByReservationId(reservationId)) {
@@ -131,8 +184,7 @@ public class ReservationCafeItemService {
         return cafeCountMap;
     }
 
-    @Transactional(readOnly = true)
-    public List<ReservationCafeItemDto> getReservationCafeItemDetailsByReservationId(Long reservationId) {
+    private List<ReservationCafeItemDto> getReservationCafeItemDetailsByReservationId(Long reservationId) {
         return reservationCafeItemRepository.findAllByReservation_Id(reservationId).stream()
                 .map(mapper::toDto)
                 .toList();

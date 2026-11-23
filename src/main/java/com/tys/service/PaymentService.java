@@ -50,7 +50,7 @@ public class PaymentService {
         if (reservation.getCompany() == null || !companyId.equals(reservation.getCompany().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
         }
-        List<Payment> payments = paymentRepository.findAllByReservationId(id);
+        List<Payment> payments = paymentRepository.findAllByReservationIdOrderByIdAsc(id);
         PaymentDto dto = new PaymentDto();
         dto.setReservationId(id);
 

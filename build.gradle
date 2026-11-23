@@ -112,5 +112,11 @@ tasks.withType(Javadoc) {
 // Duplicate JAR dosyaları için strateji belirle
 tasks.named('bootJar') {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // Yerel sırlar (application-local.properties) hiçbir dağıtım paketine girmez; yalnız bootRun/IDE okur
+    exclude '**/application-local.properties'
+}
+
+tasks.named('jar') {
+    exclude '**/application-local.properties'
 }
 
