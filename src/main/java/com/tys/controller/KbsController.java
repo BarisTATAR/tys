@@ -1,65 +1,53 @@
 package com.tys.controller;
 
-import com.tys.request.*;
-import com.tys.response.*;
+import com.tys.request.KbsParameterRequest;
+import com.tys.response.KbsForeignGuestResponse;
+import com.tys.response.KbsGuestResponse;
+import com.tys.response.KbsParameterResponse;
+import com.tys.security.CurrentActor;
+import com.tys.service.KbsCredentialService;
 import com.tys.service.KbsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Yalnız oturumdaki işletmenin kendi KBS tesis bilgileriyle salt okunur sorgular.
+ * Misafir giriş/çıkış bildirimi rezervasyon akışında (check-in / check-out) yapılır;
+ * keyfi TCKN ile doğrudan KBS'ye yazan uçlar bilinçli olarak sunulmaz.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/kbs")
 public class KbsController {
 
     private final KbsService kbsService;
+    private final KbsCredentialService kbsCredentialService;
+    private final CurrentActor currentActor;
 
     @GetMapping("/guestList")
     public ResponseEntity<List<KbsGuestResponse>> getKbsGuestList() {
-        return ResponseEntity.ok(kbsService.kbsGuestList());
+        return ResponseEntity.ok(kbsService.kbsGuestList(credentials()));
     }
 
     @GetMapping("/foreignGuestList")
     public ResponseEntity<List<KbsForeignGuestResponse>> getKbsForeignGuestList() {
-        return ResponseEntity.ok(kbsService.kbsForeignGuestList());
+        return ResponseEntity.ok(kbsService.kbsForeignGuestList(credentials()));
     }
 
     @GetMapping("/parameterList")
     public ResponseEntity<KbsParameterResponse> getKbsParameterList(@ModelAttribute KbsParameterRequest request) {
-        return ResponseEntity.ok(kbsService.kbsParameterList(request));
+        return ResponseEntity.ok(kbsService.kbsParameterList(credentials(), request));
     }
 
-    @PostMapping("/checkInGuest")
-    public ResponseEntity<KbsGuestCheckInResponse> checkInGuest(@ModelAttribute KbsGuestCheckInRequest request) {
-        return ResponseEntity.ok(kbsService.checkInGuest(request));
+    private com.tys.service.KbsCredentials credentials() {
+        Long companyId = currentActor.requireCompanyId();
+        return kbsCredentialService.find(companyId)
+                .orElseThrow(() -> new IllegalArgumentException(KbsCredentialService.NOT_CONFIGURED));
     }
-
-    @PostMapping("/checkOutGuest")
-    public ResponseEntity<KbsGuestCheckOutResponse> checkOutGuest(@ModelAttribute KbsGuestCheckOutRequest request) {
-        return ResponseEntity.ok(kbsService.checkOutGuest(request));
-    }
-
-    @PostMapping("/updateCheckInGuest")
-    public ResponseEntity<KbsGuestUpdateCheckInResponse> updateCheckInGuest(@ModelAttribute KbsGuestUpdateCheckInRequest request) {
-        return ResponseEntity.ok(kbsService.updateCheckInGuest(request));
-    }
-
-    @PostMapping("/checkInForeignGuest")
-    public ResponseEntity<KbsForeignGuestCheckInResponse> checkInGuest(@ModelAttribute KbsForeignGuestCheckInRequest request) {
-        return ResponseEntity.ok(kbsService.checkInForeignGuest(request));
-
-    }
-
-    @PostMapping("/checkOutForeignGuest")
-    public ResponseEntity<KbsForeignGuestCheckOutResponse> checkOutGuest(@ModelAttribute KbsForeignGuestCheckOutRequest request) {
-        return ResponseEntity.ok(kbsService.checkOutForeignGuest(request));
-    }
-
-    @PostMapping("/updateForeignCheckInGuest")
-    public ResponseEntity<KbsForeignGuestUpdateCheckInResponse> updateCheckInGuest(@ModelAttribute KbsForeignGuestUpdateCheckInRequest request) {
-        return ResponseEntity.ok(kbsService.updateForeignCheckInGuest(request));
-    }
-
 }

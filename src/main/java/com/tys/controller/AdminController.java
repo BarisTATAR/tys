@@ -28,21 +28,21 @@ public class AdminController {
                                                HttpServletResponse httpResponse) {
         String username = request != null ? request.getUsername() : null;
         try {
-            loginGuard.assertAllowed(username);
+            loginGuard.assertAllowed(username, httpRequest.getRemoteAddr());
         } catch (ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode())
                     .body(new LoginResponse(false, ex.getReason(), null));
         }
         LoginResponse response = adminService.login(request);
         if (response.isSuccess()) {
-            loginGuard.recordSuccess(username);
+            loginGuard.recordSuccess(username, httpRequest.getRemoteAddr());
             if (response.getToken() != null && !response.getToken().isBlank()) {
                 authCookie.write(httpRequest, httpResponse, response.getToken());
                 response.setToken(null);
             }
             return ResponseEntity.ok(response);
         }
-        loginGuard.recordFailure(username);
+        loginGuard.recordFailure(username, httpRequest.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }

@@ -141,10 +141,17 @@ public class CompanyController {
             Long companyId = getCurrentCompanyIdFromAuth();
             RulesFileDto dto = rulesFileService.uploadWord(companyId, file);
             return ResponseEntity.ok(dto);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", "Dosya yükleme hatası: " + e.getMessage());
+            error.put("message", e.getMessage());
+            error.put("error", "VALIDATION_ERROR");
+            return ResponseEntity.badRequest().body(error);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CompanyController.class).error("Rules file upload failed", e);
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Dosya yüklenemedi. Lütfen tekrar deneyin.");
             error.put("error", "UPLOAD_ERROR");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
@@ -176,12 +183,8 @@ public class CompanyController {
             error.put("message", e.getMessage());
             error.put("error", "VALIDATION_ERROR");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "SMS gönderilemedi: " + e.getMessage());
-            error.put("error", "SMS_SEND_ERROR");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
+        // Sağlayıcı yapılandırması/erişimi hataları ResponseStatusException (503/502) olarak ApiExceptionHandler'a gider
     }
 
     /**
@@ -210,21 +213,21 @@ public class CompanyController {
                                                          HttpServletResponse httpResponse) {
         String username = request != null ? request.getUsername() : null;
         try {
-            loginGuard.assertAllowed(username);
+            loginGuard.assertAllowed(username, httpRequest.getRemoteAddr());
         } catch (ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode())
                     .body(new LoginResponse(false, ex.getReason(), null));
         }
         LoginResponse response = companyService.login(request, adminLogin);
         if (response.isSuccess()) {
-            loginGuard.recordSuccess(username);
+            loginGuard.recordSuccess(username, httpRequest.getRemoteAddr());
             if (response.getToken() != null && !response.getToken().isBlank()) {
                 authCookie.write(httpRequest, httpResponse, response.getToken());
                 response.setToken(null);
             }
             return ResponseEntity.ok(response);
         }
-        loginGuard.recordFailure(username);
+        loginGuard.recordFailure(username, httpRequest.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }

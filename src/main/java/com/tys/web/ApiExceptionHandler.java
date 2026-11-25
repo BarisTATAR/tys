@@ -51,6 +51,17 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    /**
+     * Yabancı anahtar / benzersizlik ihlali: kayıt başka kayıtlarla ilişkili. SQL ve kısıt adları istemciye dönmez.
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        org.slf4j.LoggerFactory.getLogger(ApiExceptionHandler.class).warn("Veri bütünlüğü ihlali: {}", ex.getMostSpecificCause().getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Kayıt başka kayıtlarla ilişkili olduğu için işlem tamamlanamadı.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     private static ResponseEntity<Map<String, String>> conflictResponse(CompanyBusinessException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex));
     }

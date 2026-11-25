@@ -1,7 +1,9 @@
 package com.tys.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,6 +11,19 @@ import org.springframework.stereotype.Component;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import java.nio.charset.StandardCharsets;
+
+/**
+ * Şema yaşam döngüsü:
+ * <ul>
+ *   <li>Flyway (db/migration) uygulama açılmadan önce mevcut veritabanını en güncel sürüme dönüştürür.
+ *       Geçişler tablo varlığını denetleyerek yazılır; boş veritabanında hiçbir şey yapmaz.</li>
+ *   <li>Boş veritabanında tablolar burada entity tanımlarından kurulur.</li>
+ *   <li>Dolu veritabanı entity tanımlarıyla doğrulanır; uyumsuzlukta uygulama açılmaz.</li>
+ * </ul>
+ * Entity'de şema değişikliği yapan her geliştirme, eski veritabanları için yeni bir V{n}__*.sql geçişi eklemelidir.
+ */
+@Slf4j
 @Component
 @Order(0)
 public class SchemaBootstrap implements ApplicationRunner {
@@ -26,35 +41,34 @@ public class SchemaBootstrap implements ApplicationRunner {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS tys");
         boolean hasReservations = tableExists("reservation");
         if (!hasReservations) {
-            entityManagerFactory.unwrap(SessionFactory.class).getSchemaManager().exportMappedObjects(true);
-            return;
+            // Şema Flyway/yukarıdaki komutla oluşturuldu; yalnız tablolar kurulur
+            entityManagerFactory.unwrap(SessionFactory.class).getSchemaManager().exportMappedObjects(false);
+        } else {
+            entityManagerFactory.unwrap(SessionFactory.class).getSchemaManager().validateMappedObjects();
         }
-        ensureRuntimeTables();
-        entityManagerFactory.unwrap(SessionFactory.class).getSchemaManager().validateMappedObjects();
+        ensureIndexes();
     }
 
-    private void ensureRuntimeTables() {
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS tys.revoked_token (
-                    token_hash varchar(64) PRIMARY KEY,
-                    expires_at timestamp NOT NULL
-                )
-                """);
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS tys.login_lock (
-                    username varchar(120) PRIMARY KEY,
-                    failures integer NOT NULL,
-                    locked_until timestamp NULL
-                )
-                """);
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS tys.kbs_notice (
-                    id bigserial PRIMARY KEY,
-                    reservation_id bigint NOT NULL,
-                    message varchar(2000) NOT NULL,
-                    created_at timestamp NOT NULL
-                )
-                """);
+    private void ensureIndexes() {
+        try (var in = new ClassPathResource("db/indexes.sql").getInputStream()) {
+            // Yorum satırları bölmeden önce atılır (yorumdaki ';' ifadeyi bölmesin)
+            String script = new String(in.readAllBytes(), StandardCharsets.UTF_8).lines()
+                    .filter(line -> !line.trim().startsWith("--"))
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            for (String statement : script.split(";")) {
+                String sql = statement.trim();
+                if (sql.isEmpty()) {
+                    continue;
+                }
+                try {
+                    jdbcTemplate.execute(sql);
+                } catch (Exception ex) {
+                    log.warn("İndeks oluşturulamadı ({}): {}", sql, ex.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("İndeks betiği okunamadı: {}", ex.getMessage());
+        }
     }
 
     private boolean tableExists(String table) {

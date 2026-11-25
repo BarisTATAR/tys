@@ -39,21 +39,28 @@ public class ReservationCafeItemService {
             throw new IllegalArgumentException("Rezervasyon ve cafe ürünü seçilmelidir.");
         }
         Reservation reservation = requireReservationOfCompany(dto.getReservationId(), companyId);
+        assertBillOpen(reservation);
 
         Cafe cafe = cafeRepository.findById(dto.getCafeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cafe ürünü bulunamadı."));
         if (!companyId.equals(cafe.getCompanyId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
         }
+        if (Boolean.FALSE.equals(cafe.getActive())) {
+            throw new IllegalArgumentException("Bu ürün menüden kaldırılmış.");
+        }
 
         int addCount = dto.getCount() != null ? dto.getCount() : 0;
         if (addCount <= 0) {
             throw new IllegalArgumentException("Cafe adedi 0'dan büyük olmalıdır.");
         }
+        if (addCount > 999) {
+            throw new IllegalArgumentException("Cafe adedi en fazla 999 olabilir.");
+        }
 
-        // Aynı ürün rezervasyonda varsa adedi artır; yoksa yeni satır ekle
+        // Aynı ürün aynı fiyatla rezervasyonda varsa adedi artır; fiyat değişmişse yeni satır (eski satır eski fiyatla kalır)
         ReservationCafeItem item = reservationCafeItemRepository
-                .findByReservation_IdAndCafe_Id(dto.getReservationId(), dto.getCafeId())
+                .findFirstByReservation_IdAndCafe_IdAndUnitPrice(dto.getReservationId(), dto.getCafeId(), cafe.getPrice())
                 .map(existing -> {
                     int current = existing.getCount() != null ? existing.getCount() : 0;
                     existing.setCount(current + addCount);
@@ -73,7 +80,22 @@ public class ReservationCafeItemService {
     public ReservationCafeItemDto updateCafeItemCount(UpdateReservationCafeItemRequest request, Long companyId) {
         ReservationCafeItem item = findItemForUpdate(request);
         assertItemOfCompany(item, companyId);
+        assertBillOpen(item.getReservation());
         return applyCount(item, request.getCount());
+    }
+
+    /** Check-out yapılmış veya iptal edilmiş rezervasyonun kafe hesabı değiştirilemez (borç hesabı kapanmıştır). */
+    private void assertBillOpen(Reservation reservation) {
+        if (reservation == null) {
+            return;
+        }
+        com.tys.enums.ReservationStatus status = reservation.getReservationStatus();
+        if (status == com.tys.enums.ReservationStatus.CHECK_OUT_DONE) {
+            throw new IllegalArgumentException("Check-out yapılmış rezervasyonun kafe hesabı değiştirilemez.");
+        }
+        if (status == com.tys.enums.ReservationStatus.CANCELLED) {
+            throw new IllegalArgumentException("İptal edilmiş rezervasyonun kafe hesabı değiştirilemez.");
+        }
     }
 
     /**
@@ -81,10 +103,11 @@ public class ReservationCafeItemService {
      */
     @Transactional
     public List<ReservationCafeItemDto> updateCafeItemCounts(Long reservationId, List<UpdateReservationCafeItemRequest> requests, Long companyId) {
-        requireReservationOfCompany(reservationId, companyId);
+        Reservation reservation = requireReservationOfCompany(reservationId, companyId);
         if (requests == null || requests.isEmpty()) {
             return getReservationCafeItemDetailsByReservationId(reservationId);
         }
+        assertBillOpen(reservation);
 
         for (UpdateReservationCafeItemRequest request : requests) {
             request.setReservationId(reservationId);
@@ -131,6 +154,9 @@ public class ReservationCafeItemService {
             reservationCafeItemRepository.delete(item);
             return null;
         }
+        if (newCount > 999) {
+            throw new IllegalArgumentException("Cafe adedi en fazla 999 olabilir.");
+        }
         item.setCount(newCount);
         return mapper.toDto(reservationCafeItemRepository.save(item));
     }
@@ -165,7 +191,7 @@ public class ReservationCafeItemService {
             throw new IllegalArgumentException("Güncelleme için id veya reservationId + cafeId zorunludur.");
         }
         return reservationCafeItemRepository
-                .findByReservation_IdAndCafe_Id(request.getReservationId(), request.getCafeId())
+                .findFirstByReservation_IdAndCafe_IdOrderByIdDesc(request.getReservationId(), request.getCafeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Bu rezervasyonda cafe ürünü bulunamadı."));
     }

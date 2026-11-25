@@ -42,3 +42,6 @@ src/main/resources/application-local.properties
 !.env.example
 
 
+
+### Gradle önbelleği
+.gradle/

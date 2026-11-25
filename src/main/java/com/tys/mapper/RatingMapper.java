@@ -9,5 +9,6 @@ import org.mapstruct.Mapping;
 public interface RatingMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "companyId", ignore = true)
     Rating createRatingRequestToEntity(CreateRatingRequest createRatingRequest);
 }

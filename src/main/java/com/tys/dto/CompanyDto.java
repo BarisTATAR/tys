@@ -28,4 +28,9 @@ public class CompanyDto {
     private Boolean electricChargeStation;
 
     private Integer totalRoomNumber;
+
+    /** KBS tesis bilgileri tanımlı mı (şifre ve kullanıcı TCKN asla dönmez). */
+    private Boolean kbsConfigured;
+
+    private String kbsTesisKodu;
 }

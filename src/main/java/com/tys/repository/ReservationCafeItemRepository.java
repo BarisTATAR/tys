@@ -12,7 +12,11 @@ public interface ReservationCafeItemRepository extends JpaRepository<Reservation
 
     List<ReservationCafeItem> findAllByReservation_Id(Long reservationId);
 
-    Optional<ReservationCafeItem> findByReservation_IdAndCafe_Id(Long reservationId, Long cafeId);
+    /** Aynı ürünün farklı fiyatla eklenmiş birden çok satırı olabilir: en son satır. */
+    Optional<ReservationCafeItem> findFirstByReservation_IdAndCafe_IdOrderByIdDesc(Long reservationId, Long cafeId);
 
-    void deleteAllByCafe_Id(Long cafeId);
+    /** Aynı ürün aynı fiyatla tekrar eklenirse adet bu satırda artırılır. */
+    Optional<ReservationCafeItem> findFirstByReservation_IdAndCafe_IdAndUnitPrice(Long reservationId, Long cafeId, java.math.BigDecimal unitPrice);
+
+    boolean existsByCafe_Id(Long cafeId);
 }

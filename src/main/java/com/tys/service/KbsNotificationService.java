@@ -31,14 +31,14 @@ public class KbsNotificationService {
     }
 
     @Async
-    public void dispatch(Long reservationId, List<Long> guestIds, boolean checkIn) {
+    public void dispatch(Long reservationId, Long companyId, List<Long> guestIds, boolean checkIn) {
         if (reservationId == null || guestIds == null || guestIds.isEmpty()) {
             return;
         }
         String warning;
         try {
             List<Guest> guests = guestRepository.findAllById(guestIds);
-            warning = reservationService.notifyGuestsForKbs(guests, checkIn);
+            warning = reservationService.notifyGuestsForKbs(companyId, guests, checkIn);
         } catch (Exception ex) {
             warning = ex.getMessage() != null ? ex.getMessage() : "KBS bildirimi yapılamadı.";
         }

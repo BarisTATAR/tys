@@ -28,4 +28,8 @@ public class                                    Cafe {
     @Column(name = "price")
     private BigDecimal price;
 
+    /** false: menüden kaldırıldı (rezervasyon hesaplarında kullanıldığı için silinmedi). */
+    @Column(name = "active", nullable = false)
+    private Boolean active = Boolean.TRUE;
+
 }

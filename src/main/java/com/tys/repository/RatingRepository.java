@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
 
+
+    java.util.Optional<com.tys.model.Rating> findByIdAndCompanyId(Long id, Long companyId);
 }

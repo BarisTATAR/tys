@@ -34,6 +34,10 @@ public class RulesSmsService {
     @Value("${app.frontend-base-url:http://localhost:3000}")
     private String frontendBaseUrl;
 
+    /** Onay linkinin geçerlilik süresi (gün); süresi dolan ve onaylanmamış link açılamaz. */
+    @Value("${app.rules-link.ttl-days:7}")
+    private int linkTtlDays;
+
     @Transactional
     public SendRulesSmsResponse sendRulesSms(Long companyId, SendRulesSmsRequest request) {
         if (request.getReservationId() == null) {
@@ -123,6 +127,7 @@ public class RulesSmsService {
     public RulesApprovalPageDto getApprovalPage(String token) {
         RulesApprovalLink link = rulesApprovalLinkRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Geçersiz veya süresi dolmuş onay linki."));
+        assertNotExpired(link);
 
         RulesFileDto rules = rulesFileService.getByCompanyId(link.getCompanyId())
                 .orElseThrow(() -> new IllegalArgumentException("İşletme kuralları bulunamadı."));
@@ -145,6 +150,7 @@ public class RulesSmsService {
     public RulesApprovalPageDto approve(String token) {
         RulesApprovalLink link = rulesApprovalLinkRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Geçersiz veya süresi dolmuş onay linki."));
+        assertNotExpired(link);
 
         if (!link.isApproved()) {
             link.setApproved(true);
@@ -163,6 +169,16 @@ public class RulesSmsService {
             throw new IllegalArgumentException("Bu rezervasyon işletmenize ait değil.");
         }
         return rulesApprovalLinkRepository.findAllByReservationIdOrderByCreatedAtDesc(reservationId);
+    }
+
+    private void assertNotExpired(RulesApprovalLink link) {
+        if (link.isApproved()) {
+            return; // onaylanmış link kayıt olarak görüntülenebilir
+        }
+        LocalDateTime createdAt = link.getCreatedAt() == null ? LocalDateTime.MIN : link.getCreatedAt();
+        if (LocalDateTime.now().isAfter(createdAt.plusDays(Math.max(1, linkTtlDays)))) {
+            throw new IllegalArgumentException("Geçersiz veya süresi dolmuş onay linki.");
+        }
     }
 
     public String buildDefaultMessage(String companyName, String guestName, String approvalUrl) {

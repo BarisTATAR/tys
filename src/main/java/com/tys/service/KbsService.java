@@ -15,30 +15,19 @@ import java.util.List;
 @Slf4j
 public class KbsService {
     private final KbsMapper kbsMapper;
-    private final long tesisKodu;
-    private final long kullaniciTc;
-    private final String sifre;
     private volatile ISrvShsYtkTml port;
 
-    public KbsService(
-            KbsMapper kbsMapper,
-            @Value("${kbs.tesis-kodu:0}") long tesisKodu,
-            @Value("${kbs.kullanici-tc:0}") long kullaniciTc,
-            @Value("${kbs.sifre:}") String sifre) {
+    public KbsService(KbsMapper kbsMapper) {
         this.kbsMapper = kbsMapper;
-        this.tesisKodu = tesisKodu;
-        this.kullaniciTc = kullaniciTc;
-        this.sifre = sifre;
     }
 
-    private void ensureCredentials() {
-        if (tesisKodu == 0L || kullaniciTc == 0L || sifre == null || sifre.isBlank()) {
-            throw new IllegalStateException("KBS tesis bilgileri tanımlı değil.");
+    private static void ensureCredentials(KbsCredentials c) {
+        if (c == null || c.tesisKodu() <= 0L || c.kullaniciTc() <= 0L || c.sifre() == null || c.sifre().isBlank()) {
+            throw new IllegalStateException(KbsCredentialService.NOT_CONFIGURED);
         }
     }
 
     private ISrvShsYtkTml port() {
-        ensureCredentials();
         ISrvShsYtkTml local = port;
         if (local == null) {
             synchronized (this) {
@@ -63,13 +52,14 @@ public class KbsService {
         return local;
     }
 
-    public List<KbsGuestResponse> kbsGuestList() {
+    public List<KbsGuestResponse> kbsGuestList(KbsCredentials c) {
+        ensureCredentials(c);
         try {
             List<KbsGuestResponse> kbsGuestResponseList = null;
             /*((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, 123L);
             ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "123");*/
 
-            MusteriKimlikNoListe musteriKimlikNoListe = port().musteriKimlikNoListele(tesisKodu, kullaniciTc, sifre);
+            MusteriKimlikNoListe musteriKimlikNoListe = port().musteriKimlikNoListele(c.tesisKodu(), c.kullaniciTc(), c.sifre());
             Sonuc musteriKimlikNoListeleSonuc = musteriKimlikNoListe.getSonuc().getValue();
             if (musteriKimlikNoListeleSonuc.isBasarili()) {
                 kbsGuestResponseList = musteriKimlikNoListe.getMItems().getValue().getMusteriKimlikNoGirisSonuc()
@@ -94,13 +84,14 @@ public class KbsService {
         }
     }
 
-    public List<KbsForeignGuestResponse> kbsForeignGuestList() {
+    public List<KbsForeignGuestResponse> kbsForeignGuestList(KbsCredentials c) {
+        ensureCredentials(c);
         try {
             List<KbsForeignGuestResponse> kbsForeignGuestResponseList = null;
             /*((BindingProvider) port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, 123L);
             ((BindingProvider) port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "123");*/
 
-            MusteriYabanciListe musteriYabanciListe = port().musteriYabanciListele(tesisKodu, kullaniciTc, sifre);
+            MusteriYabanciListe musteriYabanciListe = port().musteriYabanciListele(c.tesisKodu(), c.kullaniciTc(), c.sifre());
             Sonuc musteriYabanciListeleSonuc = musteriYabanciListe.getSonuc().getValue();
             if (musteriYabanciListeleSonuc.isBasarili()) {
                 kbsForeignGuestResponseList = musteriYabanciListe.getMItems().getValue().getMusteriYabanciGirisSonuc()
@@ -126,10 +117,11 @@ public class KbsService {
     }
 
 
-    public KbsParameterResponse kbsParameterList(KbsParameterRequest request) {
+    public KbsParameterResponse kbsParameterList(KbsCredentials c, KbsParameterRequest request) {
+        ensureCredentials(c);
         try {
             KbsParameterResponse kbsParameterResponse = new KbsParameterResponse();
-            Parametreler parametreler = port().parametreListele(tesisKodu, kullaniciTc, sifre, request.getParameter());
+            Parametreler parametreler = port().parametreListele(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getParameter());
             Sonuc parametrelerSonuc = parametreler.getSonuc().getValue();
 
             if (parametrelerSonuc.isBasarili()) {
@@ -152,10 +144,11 @@ public class KbsService {
         }
     }
 
-    public KbsGuestCheckInResponse checkInGuest(KbsGuestCheckInRequest request) {
+    public KbsGuestCheckInResponse checkInGuest(KbsCredentials c, KbsGuestCheckInRequest request) {
+        ensureCredentials(c);
         try {
             KbsGuestCheckInResponse kbsGuestCheckInResponse = new KbsGuestCheckInResponse();
-            MusteriKimlikNoGirisSonuc musteriKimlikNoGirisSonuc = port().musteriKimlikNoGiris(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            MusteriKimlikNoGirisSonuc musteriKimlikNoGirisSonuc = port().musteriKimlikNoGiris(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
             Sonuc musteriKimlikNoGirisrSonuc = musteriKimlikNoGirisSonuc.getSonuc().getValue();
 
             if (musteriKimlikNoGirisrSonuc.isBasarili()) {
@@ -178,10 +171,11 @@ public class KbsService {
         }
     }
 
-    public KbsGuestCheckOutResponse checkOutGuest(KbsGuestCheckOutRequest request) {
+    public KbsGuestCheckOutResponse checkOutGuest(KbsCredentials c, KbsGuestCheckOutRequest request) {
+        ensureCredentials(c);
         try {
             KbsGuestCheckOutResponse kbsGuestCheckOutResponse = new KbsGuestCheckOutResponse();
-            Sonuc sonuc = port().musteriKimlikNoCikis(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            Sonuc sonuc = port().musteriKimlikNoCikis(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsGuestCheckOutResponse.setSonuc(sonuc);
@@ -199,10 +193,11 @@ public class KbsService {
         }
     }
 
-    public KbsGuestUpdateCheckInResponse updateCheckInGuest(KbsGuestUpdateCheckInRequest request) {
+    public KbsGuestUpdateCheckInResponse updateCheckInGuest(KbsCredentials c, KbsGuestUpdateCheckInRequest request) {
+        ensureCredentials(c);
         try {
             KbsGuestUpdateCheckInResponse kbsGuestUpdateCheckInResponse = new KbsGuestUpdateCheckInResponse();
-            Sonuc sonuc = port().musteriKimlikNoGuncelle(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            Sonuc sonuc = port().musteriKimlikNoGuncelle(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsGuestUpdateCheckInResponse.setSonuc(sonuc);
@@ -220,10 +215,11 @@ public class KbsService {
         }
     }
 
-    public KbsForeignGuestCheckInResponse checkInForeignGuest(KbsForeignGuestCheckInRequest request) {
+    public KbsForeignGuestCheckInResponse checkInForeignGuest(KbsCredentials c, KbsForeignGuestCheckInRequest request) {
+        ensureCredentials(c);
         try {
             KbsForeignGuestCheckInResponse kbsForeignGuestCheckInResponse = new KbsForeignGuestCheckInResponse();
-            MusteriYabanciGirisSonuc musteriYabanciGiris = port().musteriYabanciGiris(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            MusteriYabanciGirisSonuc musteriYabanciGiris = port().musteriYabanciGiris(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
             Sonuc musteriKimlikNoGirisrSonuc = musteriYabanciGiris.getSonuc().getValue();
 
             if (musteriKimlikNoGirisrSonuc.isBasarili()) {
@@ -242,10 +238,11 @@ public class KbsService {
         }
     }
 
-    public KbsForeignGuestCheckOutResponse checkOutForeignGuest(KbsForeignGuestCheckOutRequest request) {
+    public KbsForeignGuestCheckOutResponse checkOutForeignGuest(KbsCredentials c, KbsForeignGuestCheckOutRequest request) {
+        ensureCredentials(c);
         try {
             KbsForeignGuestCheckOutResponse kbsForeignGuestCheckOutResponse = new KbsForeignGuestCheckOutResponse();
-            Sonuc sonuc = port().musteriYabanciCikis(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            Sonuc sonuc = port().musteriYabanciCikis(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsForeignGuestCheckOutResponse.setSonuc(sonuc);
@@ -263,10 +260,11 @@ public class KbsService {
         }
     }
 
-    public KbsForeignGuestUpdateCheckInResponse updateForeignCheckInGuest(KbsForeignGuestUpdateCheckInRequest request) {
+    public KbsForeignGuestUpdateCheckInResponse updateForeignCheckInGuest(KbsCredentials c, KbsForeignGuestUpdateCheckInRequest request) {
+        ensureCredentials(c);
         try {
             KbsForeignGuestUpdateCheckInResponse kbsForeignGuestUpdateCheckInResponse = new KbsForeignGuestUpdateCheckInResponse();
-            Sonuc sonuc = port().musteriYabanciGuncelle(tesisKodu, kullaniciTc, sifre, request.getMusteri());
+            Sonuc sonuc = port().musteriYabanciGuncelle(c.tesisKodu(), c.kullaniciTc(), c.sifre(), request.getMusteri());
 
             if (sonuc.isBasarili()) {
                 kbsForeignGuestUpdateCheckInResponse.setSonuc(sonuc);

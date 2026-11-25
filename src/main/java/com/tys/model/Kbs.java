@@ -1,5 +1,6 @@
 package com.tys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,14 +18,18 @@ public class Kbs {
     @Column(name = "id")
     private Long id;
 
+    @JsonIgnore
+
     @Column(name = "identityNumber")
     private String identityNumber;   //Company T.C No
 
     @Column(name = "company_code")
     private String companyCode;     //Company Code
 
+    @JsonIgnore
+
     @Column(name = "password")
-    private String password;     //kriptolanacak
+    private String password;     // AES-GCM ile şifreli (SecretCipher)
 
     @OneToOne
     @JoinColumn(name = "company_id", nullable = false)

@@ -15,6 +15,11 @@ import java.util.List;
 public interface PaymentMapper {
     Payment createPaymentRequestToEntity(CreatePaymentRequest createPaymentRequest);
 
+    // Yalnız gönderilen alanlar güncellenir; id ve rezervasyon değiştirilemez
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "reservation", ignore = true)
+    @Mapping(target = "paidAmount", ignore = true)
     void updateExistingPaymentWithPaymentRequest(UpdatePaymentRequest updatePaymentRequest, @MappingTarget Payment existingPayment);
 
     PaymentDto toDto(Payment payment);

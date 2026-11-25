@@ -19,12 +19,17 @@ public class ReservationCafeItemMapper {
                 .reservation(reservation)
                 .cafe(cafe)
                 .count(dto.getCount())
+                // Fiyat eklendiği anda sabitlenir
+                .unitPrice(cafe != null ? cafe.getPrice() : null)
                 .build();
     }
 
     public ReservationCafeItemDto toDto(ReservationCafeItem entity) {
         Cafe cafe = entity.getCafe();
-        BigDecimal unitPrice = cafe != null && cafe.getPrice() != null ? cafe.getPrice() : BigDecimal.ZERO;
+        // Kalemde saklı birim fiyat esastır; yalnız eski (fiyatı saklanmamış) kayıtlarda ürünün fiyatı kullanılır
+        BigDecimal unitPrice = entity.getUnitPrice() != null
+                ? entity.getUnitPrice()
+                : (cafe != null && cafe.getPrice() != null ? cafe.getPrice() : BigDecimal.ZERO);
         int count = entity.getCount() != null ? entity.getCount() : 0;
 
         ReservationCafeItemDto dto = new ReservationCafeItemDto();

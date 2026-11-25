@@ -1,2 +1,6 @@
 /mvnw text eol=lf
+# Gradle wrapper betiği Linux'ta (Docker imajı dahil) çalışır: her zaman LF satır sonu
+/gradlew text eol=lf
+*.sh text eol=lf
 *.cmd text eol=crlf
+*.bat text eol=crlf

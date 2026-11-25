@@ -46,10 +46,16 @@ public class Guest {
     @Column(name = "address")
     private String address;
 
+    /** İl (SMS il filtresi) */
+    @Column(name = "city", length = 100)
+    private String city;
+
     @Column(name = "country_code")
+    @Enumerated(EnumType.STRING)
     private SnfEnumUlkeler countryCode;
 
     @Column(name = "guest_usage_type")
+    @Enumerated(EnumType.STRING)
     private SnfEnumKonaklayanKullanimSekli guestUsageType;
 
     @Column(name = "plate_number")

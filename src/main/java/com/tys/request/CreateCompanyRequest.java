@@ -1,18 +1,10 @@
 package com.tys.request;
 
 import com.tys.enums.CompanyCategory;
-import com.tys.model.Kbs;
-import com.tys.model.Reservation;
-import com.tys.model.Room;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @Builder
@@ -34,4 +26,8 @@ public class CreateCompanyRequest {
     private Boolean electricChargeStation;
     private Integer totalRoomNumber;
 
+    /** İşletmeye ait Jandarma KBS bilgileri (opsiyonel; verilirse üçü birlikte zorunlu). Şifre şifrelenerek saklanır. */
+    private String kbsTesisKodu;
+    private String kbsKullaniciTc;
+    private String kbsSifre;
 }

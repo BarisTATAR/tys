@@ -12,7 +12,8 @@ public final class InputRules {
     public static final int MAX_TEXT = 1000;
     public static final int MAX_SMS = 500;
 
-    private static final Pattern PERSON_NAME = Pattern.compile("^[a-zA-ZğüşıöçĞÜŞİÖÇ\\s]{1,80}$");
+    // Her dilden harf (yabancı misafirler: José, Müller, Seán), boşluk, tire, kesme işareti ve nokta; harfle başlar
+    private static final Pattern PERSON_NAME = Pattern.compile("^\\p{L}[\\p{L}\\p{M}\\s'’.\\-]{0,79}$");
     private static final Pattern PLATE = Pattern.compile("^[a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]{1,15}$");
     private static final Pattern CAFE_NAME = Pattern.compile("^[a-zA-Z0-9ğüşıöçĞÜŞİÖÇ\\s]{1,80}$");
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@<>]{1,64}@[^\\s@<>]{1,120}\\.[^\\s@<>]{2,24}$");
@@ -66,7 +67,7 @@ public final class InputRules {
             return;
         }
         if (!PERSON_NAME.matcher(value.trim()).matches()) {
-            throw new IllegalArgumentException(label + " yalnız harf içerebilir.");
+            throw new IllegalArgumentException(label + " yalnız harf, boşluk, tire ve kesme işareti içerebilir.");
         }
     }
 
@@ -183,6 +184,125 @@ public final class InputRules {
         }
         int digit11 = Math.floorMod(sum10, 10);
         return digit10 == (tckn.charAt(9) - '0') && digit11 == (tckn.charAt(10) - '0');
+    }
+
+    // ------------------------------------------------------------------ hesap / işletme / oda / puan kuralları
+
+    public static final int PASSWORD_MIN = 8;
+    public static final int PASSWORD_MAX = 72; // BCrypt yalnız ilk 72 baytı kullanır
+    public static final int MAX_ROOMS = 5000;
+    private static final Pattern USERNAME = Pattern.compile("^[a-zA-Z0-9._-]{3,50}$");
+    private static final Pattern FACILITY = Pattern.compile("^[a-zA-Z0-9._/-]{1,50}$");
+    private static final Pattern DIGITS = Pattern.compile("^\\d{1,15}$");
+
+    /** Parola politikası: 8–72 karakter, en az bir harf ve bir rakam, boşluk yok. */
+    public static void password(String value, String label) {
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException(label + " gereklidir.");
+        }
+        if (value.length() < PASSWORD_MIN || value.length() > PASSWORD_MAX) {
+            throw new IllegalArgumentException(label + " " + PASSWORD_MIN + "–" + PASSWORD_MAX + " karakter olmalıdır.");
+        }
+        boolean letter = false;
+        boolean digit = false;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (Character.isWhitespace(ch)) {
+                throw new IllegalArgumentException(label + " boşluk içeremez.");
+            }
+            letter |= Character.isLetter(ch);
+            digit |= Character.isDigit(ch);
+        }
+        if (!letter || !digit) {
+            throw new IllegalArgumentException(label + " en az bir harf ve bir rakam içermelidir.");
+        }
+    }
+
+    public static void username(String value) {
+        if (!hasText(value) || !USERNAME.matcher(value.trim()).matches()) {
+            throw new IllegalArgumentException("Kullanıcı adı 3–50 karakter olmalı; harf, rakam, nokta, tire ve alt çizgi içerebilir.");
+        }
+    }
+
+    public static void requiredText(String value, String label, int maxLength) {
+        if (!hasText(value)) {
+            throw new IllegalArgumentException(label + " gereklidir.");
+        }
+        plainText(value, label, maxLength, true);
+    }
+
+    public static void facilityNumber(String value) {
+        if (!hasText(value) || !FACILITY.matcher(value.trim()).matches()) {
+            throw new IllegalArgumentException("Tesis (TSS) numarası gereklidir; harf, rakam ve - . / _ içerebilir.");
+        }
+    }
+
+    public static void totalRoomNumber(Integer value) {
+        if (value == null || value < 1 || value > MAX_ROOMS) {
+            throw new IllegalArgumentException("Toplam oda sayısı 1 ile " + MAX_ROOMS + " arasında olmalıdır.");
+        }
+    }
+
+    public static void optionalMobile(String value) {
+        if (hasText(value)) {
+            requireMobile(value);
+        }
+    }
+
+    public static void startYear(Integer value) {
+        if (value != null && (value < 1800 || value > 2100)) {
+            throw new IllegalArgumentException("Kuruluş yılı geçersiz.");
+        }
+    }
+
+    /** Oda numarası 1–99999, kapasite 1–50, kat -5–200. */
+    public static void room(Integer number, Integer capacity, Integer floor) {
+        if (number == null || number < 1 || number > 99_999) {
+            throw new IllegalArgumentException("Oda numarası 1 ile 99999 arasında olmalıdır.");
+        }
+        if (capacity == null || capacity < 1 || capacity > 50) {
+            throw new IllegalArgumentException("Oda kapasitesi 1 ile 50 arasında olmalıdır.");
+        }
+        if (floor != null && (floor < -5 || floor > 200)) {
+            throw new IllegalArgumentException("Kat -5 ile 200 arasında olmalıdır.");
+        }
+    }
+
+    /** Ek (kapanış) ödeme: tutar zorunlu ve 0'dan büyük, ödeme tipi zorunlu. */
+    public static void paidAmount(BigDecimal amount, Object paymentType) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Ödeme tutarı 0'dan büyük olmalıdır.");
+        }
+        if (amount.scale() > 2) {
+            throw new IllegalArgumentException("Ödeme tutarı en fazla 2 ondalık basamak içerebilir.");
+        }
+        if (paymentType == null) {
+            throw new IllegalArgumentException("Ödeme şekli seçilmelidir.");
+        }
+    }
+
+    /** Değerlendirme puanları 1–5. */
+    public static void rating(BigDecimal average, Integer... scores) {
+        if (average == null || average.compareTo(BigDecimal.ONE) < 0 || average.compareTo(BigDecimal.valueOf(5)) > 0) {
+            throw new IllegalArgumentException("Ortalama puan 1 ile 5 arasında olmalıdır.");
+        }
+        for (Integer score : scores) {
+            if (score != null && (score < 1 || score > 5)) {
+                throw new IllegalArgumentException("Puanlar 1 ile 5 arasında olmalıdır.");
+            }
+        }
+    }
+
+    /** KBS tesis kodu ve kullanıcı TCKN rakamlardan oluşur. */
+    public static long kbsNumber(String value, String label) {
+        if (!hasText(value) || !DIGITS.matcher(value.trim()).matches()) {
+            throw new IllegalArgumentException(label + " yalnız rakamlardan oluşmalıdır.");
+        }
+        long parsed = Long.parseLong(value.trim());
+        if (parsed <= 0) {
+            throw new IllegalArgumentException(label + " geçersiz.");
+        }
+        return parsed;
     }
 
     private static boolean sameText(String incoming, String previous) {

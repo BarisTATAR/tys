@@ -28,14 +28,12 @@ public class ProductionReadiness implements ApplicationRunner {
     @Value("${sms.api-key:}")
     private String smsApiKey;
 
-    @Value("${kbs.tesis-kodu:0}")
-    private String kbsTesisKodu;
+    /** İşletme KBS şifrelerini çözmek için; canlıda JWT anahtarından türetilmez, ayrı verilmelidir. */
+    @Value("${app.encryption-key:}")
+    private String encryptionKey;
 
-    @Value("${kbs.kullanici-tc:0}")
-    private String kbsKullaniciTc;
-
-    @Value("${kbs.sifre:}")
-    private String kbsSifre;
+    @Value("${app.frontend-base-url:}")
+    private String frontendBaseUrl;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -52,10 +50,11 @@ public class ProductionReadiness implements ApplicationRunner {
         if (smsApiId.isBlank() || smsApiKey.isBlank()) {
             missing.add("SMS_API_ID ve SMS_API_KEY");
         }
-        if (kbsTesisKodu.isBlank() || "0".equals(kbsTesisKodu.trim())
-                || kbsKullaniciTc.isBlank() || "0".equals(kbsKullaniciTc.trim())
-                || kbsSifre.isBlank()) {
-            missing.add("KBS_TESIS_KODU, KBS_KULLANICI_TC ve KBS_SIFRE");
+        if (encryptionKey == null || encryptionKey.isBlank()) {
+            missing.add("APP_ENCRYPTION_KEY (32 bayt Base64; işletme KBS şifreleri için)");
+        }
+        if (frontendBaseUrl == null || !frontendBaseUrl.trim().toLowerCase().startsWith("https://")) {
+            missing.add("FRONTEND_BASE_URL (https:// ile canlı site adresi; SMS onay linkleri için)");
         }
         if (!missing.isEmpty()) {
             throw new IllegalStateException(

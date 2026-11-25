@@ -12,8 +12,11 @@ COPY settings.gradle* ./
 # Kaynak kodu kopyala
 COPY src src
 
-# WSDL generate + JAR oluştur (test atlanır, ağ erişimi WSDL için gerekir)
-RUN ./gradlew bootJar --no-daemon -x test
+# WSDL'den sınıf üretimi + JAR (testler ayrı koşulur). KBS WSDL'i repodadır; ağ yalnız
+# Gradle bağımlılıklarını indirmek için gerekir.
+# gradlew Windows kopyasından gelirse satır sonları CRLF, git'ten gelirse çalıştırma izni
+# eksik olabilir: ikisi de derlemeden önce düzeltilir.
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew && ./gradlew bootJar --no-daemon -x test
 
 # Run stage
 FROM eclipse-temurin:17-jre

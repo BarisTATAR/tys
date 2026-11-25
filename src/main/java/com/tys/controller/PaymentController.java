@@ -3,8 +3,6 @@ package com.tys.controller;
 
 import com.tys.dto.PaymentDto;
 import com.tys.enums.PaymentType;
-import com.tys.model.Payment;
-import com.tys.request.CreatePaymentRequest;
 import com.tys.request.UpdatePaymentRequest;
 import com.tys.security.CurrentActor;
 import com.tys.service.PaymentService;
@@ -29,12 +27,8 @@ public class PaymentController {
         return currentActor.requireCompanyId();
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Void> createPayment(@RequestBody CreatePaymentRequest request) {
-        Long companyId = getCurrentCompanyIdFromAuth();
-        paymentService.createPayment(request, companyId);
-        return ResponseEntity.ok().build();
-    }
+    // Ödeme oluşturma: ana ödeme rezervasyon kaydıyla, ek ödeme POST /reservation/{id}/payments ile yapılır.
+    // Doğrulamasız ve iş kurallarını atlayan eski POST /payment/create ucu kaldırıldı.
 
     @PutMapping("/update")
     public ResponseEntity<Void> updatePayment(@RequestBody UpdatePaymentRequest request) {
