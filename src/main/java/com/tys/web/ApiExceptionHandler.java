@@ -51,6 +51,15 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    /** Okunamayan istek gövdesi (bozuk JSON, yanlış biçimli tarih/sayı): iç ayrıntı dönmeden anlamlı 400. */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadable(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        org.slf4j.LoggerFactory.getLogger(ApiExceptionHandler.class).warn("Okunamayan istek: {}", ex.getMostSpecificCause().getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "İstek okunamadı; girilen alanların biçimini kontrol edin.");
+        return ResponseEntity.badRequest().body(error);
+    }
+
     /**
      * Yabancı anahtar / benzersizlik ihlali: kayıt başka kayıtlarla ilişkili. SQL ve kısıt adları istemciye dönmez.
      */

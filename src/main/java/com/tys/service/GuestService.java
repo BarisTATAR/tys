@@ -95,12 +95,26 @@ public class GuestService {
         InputRules.plainText(request.getCity(), "Şehir", 100, false);
         InputRules.plainText(request.getJob(), "Meslek", 100, false);
         InputRules.plainText(request.getAddress(), "Adres", 500, false);
-        guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
-        if (request.getCheckInDate() != null) {
-            existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
+        // Konaklayan misafir (check-in yapılmış rezervasyonda): giriş/çıkış KBS'ye bildirildiği için
+        // TCKN değiştirilemez, giriş/çıkış tarihleri yalnız rezervasyon akışında (check-in / check-out) değişir
+        boolean staying = isInCheckedInReservation(existingGuest);
+        if (staying && existingGuest.getCheckInDate() != null && existingGuest.getCheckOutDate() == null
+                && ReservationService.identityChanged(existingGuest.getIdentityNumber(), request.getIdentityNumber())) {
+            throw new IllegalArgumentException(ReservationService.STAYING_GUEST_TCKN_LOCKED);
         }
-        if (request.getCheckOutDate() != null) {
-            existingGuest.setCheckOutDate(request.getCheckOutDate().atStartOfDay());
+        LocalDateTime keptCheckIn = existingGuest.getCheckInDate();
+        LocalDateTime keptCheckOut = existingGuest.getCheckOutDate();
+        guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
+        if (staying) {
+            existingGuest.setCheckInDate(keptCheckIn);
+            existingGuest.setCheckOutDate(keptCheckOut);
+        } else {
+            if (request.getCheckInDate() != null) {
+                existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
+            }
+            if (request.getCheckOutDate() != null) {
+                existingGuest.setCheckOutDate(request.getCheckOutDate().atStartOfDay());
+            }
         }
         guestRepository.save(existingGuest);
     }
@@ -159,6 +173,11 @@ public class GuestService {
             }
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
+    }
+
+    private boolean isInCheckedInReservation(Guest guest) {
+        return guest.getReservations() != null && guest.getReservations().stream()
+                .anyMatch(reservation -> reservation.getReservationStatus() == com.tys.enums.ReservationStatus.CHECK_IN_DONE);
     }
 
     private String phoneKey(String phone) {

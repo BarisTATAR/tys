@@ -44,7 +44,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -106,6 +108,12 @@ public class ReservationService {
                 && existingReservation.getReservationStatus() != ReservationStatus.CHECK_OUT_DONE;
         boolean checkingIn = request.getReservationStatus() == ReservationStatus.CHECK_IN_DONE
                 && existingReservation.getReservationStatus() != ReservationStatus.CHECK_IN_DONE;
+        // Check-in yapılmış rezervasyonda KBS'ye girişi bildirilmiş misafirler korunur (çıkarılamaz, TCKN'si değişmez)
+        boolean wasCheckedIn = existingReservation.getReservationStatus() == ReservationStatus.CHECK_IN_DONE;
+        boolean staysCheckedIn = wasCheckedIn && !checkingOut;
+        if (wasCheckedIn && request.getGuests() != null) {
+            assertStayingGuestsKept(existingReservation, request.getGuests());
+        }
         // 1️⃣ Eğer status CHECKOUT yapılmak isteniyorsa borç kontrolü yap
 
         Guest contactGuest = new Guest();
@@ -161,6 +169,13 @@ public class ReservationService {
         }
         List<Guest> kbsCheckOutTargets = new ArrayList<>();
         if (checkingOut && existingReservation.getGuests() != null) {
+            for (Guest guest : existingReservation.getGuests()) {
+                if (isAddedGuest(guest) && guest.getCheckInDate() == null && guest.getCheckOutDate() == null) {
+                    // Girişi bildirilmemiş kişi için KBS'ye çıkış gönderilemez
+                    throw new IllegalArgumentException(
+                            "Check-out ile birlikte yeni misafir eklenemez. Önce misafiri ekleyip kaydedin (KBS'ye giriş bildirilir), sonra check-out yapın.");
+                }
+            }
             LocalDateTime checkedOutAt = LocalDateTime.now();
             for (Guest guest : existingReservation.getGuests()) {
                 if (isAddedGuest(guest) && guest.getCheckOutDate() == null) {
@@ -185,6 +200,17 @@ public class ReservationService {
                     if (isAddedGuest(guest) && guest.getCheckInDate() == null) {
                         guest.setCheckInDate(checkedInAt);
                     }
+                }
+            }
+        }
+        // Konaklama sürerken eklenen misafir: girişi yazılır ve KBS'ye giriş bildirilir
+        List<Guest> lateArrivals = new ArrayList<>();
+        if (staysCheckedIn && existingReservation.getGuests() != null) {
+            LocalDateTime arrivedAt = LocalDateTime.now();
+            for (Guest guest : existingReservation.getGuests()) {
+                if (isAddedGuest(guest) && guest.getCheckInDate() == null && guest.getCheckOutDate() == null) {
+                    guest.setCheckInDate(arrivedAt);
+                    lateArrivals.add(guest);
                 }
             }
         }
@@ -213,7 +239,56 @@ public class ReservationService {
             queueKbs(existingReservation.getId(), kbsCheckOutTargets, existingReservation, false);
             return KbsNotificationService.QUEUED;
         }
+        if (!lateArrivals.isEmpty()) {
+            queueKbs(existingReservation.getId(), lateArrivals, existingReservation, true);
+            return KbsNotificationService.QUEUED;
+        }
         return null;
+    }
+
+    /** Girişi KBS'ye bildirilmiş, çıkışı yapılmamış misafir. */
+    private boolean isStayingGuest(Guest guest) {
+        return isAddedGuest(guest) && guest.getCheckInDate() != null && guest.getCheckOutDate() == null;
+    }
+
+    static final String STAYING_GUEST_TCKN_LOCKED =
+            "KBS'ye girişi bildirilmiş misafirin TCKN'si değiştirilemez. Yanlış girildiyse misafire erken check-out yapıp doğru TCKN ile yeniden ekleyin.";
+
+    /**
+     * Check-in yapılmış rezervasyonda konaklayan misafir güncellemeyle listeden çıkarılamaz (KBS'ye çıkış gitmezdi)
+     * ve TCKN'si değiştirilemez (çıkış bildirimi KBS'deki giriş kaydıyla eşleşmezdi).
+     */
+    private void assertStayingGuestsKept(Reservation reservation, List<Guest> requestGuests) {
+        if (reservation.getGuests() == null) {
+            return;
+        }
+        Map<Long, Guest> incomingById = new HashMap<>();
+        for (Guest incoming : requestGuests) {
+            if (incoming != null && incoming.getId() != null) {
+                incomingById.put(incoming.getId(), incoming);
+            }
+        }
+        for (Guest staying : reservation.getGuests()) {
+            if (!isStayingGuest(staying)) {
+                continue;
+            }
+            Guest incoming = incomingById.get(staying.getId());
+            if (incoming == null) {
+                throw new IllegalArgumentException(
+                        "Check-in yapılmış misafir listeden çıkarılamaz (KBS'ye giriş bildirildi). Misafir ayrılıyorsa erken check-out yapın.");
+            }
+            if (identityChanged(staying.getIdentityNumber(), incoming.getIdentityNumber())) {
+                throw new IllegalArgumentException(STAYING_GUEST_TCKN_LOCKED);
+            }
+        }
+    }
+
+    /** Kayıtlı TCKN varken farklı bir TCKN gelmesi (boş gelen değer değişiklik sayılmaz). */
+    static boolean identityChanged(String stored, String incoming) {
+        if (incoming == null || incoming.isBlank() || stored == null || stored.isBlank()) {
+            return false;
+        }
+        return !stored.trim().equals(incoming.trim());
     }
 
     private void assertReservationCompany(Reservation reservation, Long companyId) {
@@ -374,6 +449,9 @@ public class ReservationService {
                 // İstekle gelen company/reservations alanlarına güvenilmez; yeni misafir rezervasyonun işletmesine aittir
                 incoming.setCompany(company);
                 incoming.setReservations(new ArrayList<>());
+                // Giriş/çıkış tarihleri KBS bildirim durumunu gösterir; yalnız sunucu yazar
+                incoming.setCheckInDate(null);
+                incoming.setCheckOutDate(null);
                 managed = guestRepository.save(incoming);
             }
             managedGuests.add(managed);
@@ -654,8 +732,11 @@ public class ReservationService {
                 guest.setSurname(request.getSurname().trim());
             }
             if (hasText(request.getIdentityNumber())) {
-                // KBS çıkış bildirimine hatalı kimlik numarası gitmesin
+                // KBS çıkış bildirimine hatalı kimlik numarası gitmesin; girişte bildirilen numara değiştirilemez
                 InputRules.requireTckn(request.getIdentityNumber().trim());
+                if (guest.getCheckInDate() != null && identityChanged(guest.getIdentityNumber(), request.getIdentityNumber())) {
+                    throw new IllegalArgumentException(STAYING_GUEST_TCKN_LOCKED);
+                }
                 guest.setIdentityNumber(request.getIdentityNumber().trim());
             }
             InputRules.personName(guest.getName(), "Misafir adı");
@@ -924,7 +1005,10 @@ public class ReservationService {
 
         ReservationDto dto = reservationMapper.toDto(reservation);
         kbsNoticeRepository.findFirstByReservationIdOrderByCreatedAtDesc(reservation.getId())
-                .ifPresent(notice -> dto.setKbsWarning(notice.getMessage()));
+                .ifPresent(notice -> {
+                    dto.setKbsWarning(notice.getMessage());
+                    dto.setKbsWarningId(notice.getId());
+                });
         return dto;
     }
 

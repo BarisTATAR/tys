@@ -67,10 +67,15 @@ public class Guest {
     @Column(name = "is_contact")
     private Boolean isContact;
 
+    // Giriş/çıkış anları KBS bildirim durumunu gösterir ve yalnız sunucuda (check-in / check-out akışında) yazılır.
+    // İstekten okunmaz: arayüz misafiri geri gönderirken tarih "yyyy-MM-dd" biçimindedir ve okunmaya çalışılırsa
+    // check-in yapılmış rezervasyonun her güncellemesi 400 ile reddedilirdi.
     @Column(name = "check_in_date")
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     private LocalDateTime checkInDate;
 
     @Column(name = "check_out_date")
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     private LocalDateTime checkOutDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
