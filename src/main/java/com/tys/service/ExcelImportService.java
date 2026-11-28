@@ -58,14 +58,14 @@ public class ExcelImportService {
             }
         }
 
-        assertNoDuplicateIdentityNumbers(guestsToImport);
+        assertNoDuplicateIdentityNumbers(guestsToImport, companyId);
 
         for (Guest guest : guestsToImport) {
             guestRepository.save(guest);
         }
     }
 
-    private void assertNoDuplicateIdentityNumbers(List<Guest> guests) {
+    private void assertNoDuplicateIdentityNumbers(List<Guest> guests, Long companyId) {
         Set<String> seenInFile = new HashSet<>();
 
         for (Guest guest : guests) {
@@ -81,9 +81,9 @@ public class ExcelImportService {
                         "Excel dosyasında aynı TC kimlik numarası birden fazla kez geçiyor: " + identityNumber);
             }
 
-            if (guestRepository.existsByIdentityNumber(identityNumber)) {
+            if (!guestRepository.findAllByIdentityNumberInCompany(identityNumber, companyId).isEmpty()) {
                 throw new IllegalArgumentException(
-                        "Bu TC kimlik numarası sistemde zaten kayıtlı: " + identityNumber);
+                        "Bu TC kimlik numarası işletmenizde zaten kayıtlı: " + identityNumber);
             }
 
             InputRules.guestFields(

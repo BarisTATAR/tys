@@ -24,4 +24,9 @@ public class UpdateCompanyRequest {
     private String facilityNumber;
     private Boolean electricChargeStation;
     private Integer totalRoomNumber;
+
+    /** KBS bilgileri: boş bırakılan alan değişmez; şifre yalnız dolu gönderilirse güncellenir. */
+    private String kbsTesisKodu;
+    private String kbsKullaniciTc;
+    private String kbsSifre;
 }

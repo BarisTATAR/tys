@@ -37,7 +37,7 @@ public class RoomController {
             return ResponseEntity.ok().build();
         } catch (ResponseStatusException ex) {
             throw ex;
-        } catch (RuntimeException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             // Business rule hatasını yakala ve mesaj olarak döndür
             Map<String, String> error = new HashMap<>();
             error.put("message", ex.getMessage());
@@ -82,7 +82,9 @@ public class RoomController {
             throw ex;
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", "Room bilgileri alınamadı: " + e.getMessage());
+            // İç hata ayrıntısı istemciye dönmez (sunucu logunda)
+            org.slf4j.LoggerFactory.getLogger(RoomController.class).error("Oda listesi alınamadı", e);
+            error.put("message", "Oda bilgileri alınamadı.");
             error.put("error", "ROOM_FETCH_ERROR");
             return ResponseEntity.status(500).body(error);
         }
@@ -126,7 +128,9 @@ public class RoomController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", "Room bilgileri alınamadı: " + e.getMessage());
+            // İç hata ayrıntısı istemciye dönmez (sunucu logunda)
+            org.slf4j.LoggerFactory.getLogger(RoomController.class).error("Oda listesi alınamadı", e);
+            error.put("message", "Oda bilgileri alınamadı.");
             error.put("error", "ROOM_FETCH_ERROR");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }

@@ -13,6 +13,12 @@ out/
 .git/
 .gitignore
 
+# Sırlar: imaja asla girmez (değerler çalışma zamanında ortam değişkeninden verilir)
+**/application-local.properties
+.env
+.env.*
+!.env.example
+
 # Diğer
 *.md
 Dockerfile

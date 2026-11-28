@@ -12,7 +12,11 @@ import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findAllByReservationId(Long reservationId);
+    /**
+     * Oluşturulma sırasıyla (id artan). İlk kayıt rezervasyonun ana ödemesidir (toplam tutar + kapora);
+     * sıra garanti edilmezse güncellenen satır sona düşer ve borç hesabı yanlış satırdan yapılır.
+     */
+    List<Payment> findAllByReservationIdOrderByIdAsc(Long reservationId);
 
     @Query("""
             SELECT p

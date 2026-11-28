@@ -29,6 +29,9 @@ public class UpdateReservationRequest {
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
 
+    /** Rezervasyon açıklaması; gönderilirse güncellenir (boş metin açıklamayı temizler). */
+    private String reservationMessage;
+
     /** Gönderilirse rezervasyon odaları bu listeyle değiştirilir (en az 1 oda). */
     private List<CreateRoomRequest> roomList;
 }

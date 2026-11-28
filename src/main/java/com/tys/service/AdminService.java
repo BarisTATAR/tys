@@ -15,27 +15,25 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AdminService {
 
+    private static final String LOGIN_ERROR = "Kullanıcı adı veya şifre hatalı.";
+
     private final AdminRepository adminRepository;
     private final JwtService jwtService;
     private final PasswordService passwordService;
 
     public LoginResponse login(LoginRequest request) {
-        Optional<Admin> optionalAdmin = adminRepository.findByUsername(request.getUsername());
-
+        if (request == null || request.getUsername() == null || request.getPassword() == null) {
+            return new LoginResponse(false, LOGIN_ERROR, null);
+        }
+        Optional<Admin> optionalAdmin = adminRepository.findByUsername(request.getUsername().trim());
         if (optionalAdmin.isEmpty()) {
-            return new LoginResponse(false, "Kullanıcı adı veya şifre hatalı.", null);
+            passwordService.burnTime();
+            return new LoginResponse(false, LOGIN_ERROR, null);
         }
-
         Admin admin = optionalAdmin.get();
-
         if (!passwordService.matches(request.getPassword(), admin.getPassword())) {
-            return new LoginResponse(false, "Kullanıcı adı veya şifre hatalı.", null);
+            return new LoginResponse(false, LOGIN_ERROR, null);
         }
-        if (!passwordService.isHashed(admin.getPassword())) {
-            admin.setPassword(passwordService.hash(request.getPassword()));
-            adminRepository.save(admin);
-        }
-
         String token = jwtService.generateAdminToken(admin.getId());
         return new LoginResponse(true, "Giriş başarılı.", token);
     }

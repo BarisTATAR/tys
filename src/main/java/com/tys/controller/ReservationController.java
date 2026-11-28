@@ -38,7 +38,7 @@ public class ReservationController {
             return ResponseEntity.ok().build();
         } catch (ResponseStatusException ex) {
             throw ex;
-        } catch (RuntimeException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             return ResponseEntity
                     .badRequest()
                     .body(Map.of("message", ex.getMessage()));
@@ -56,7 +56,7 @@ public class ReservationController {
             return ResponseEntity.ok(Map.of());
         } catch (ResponseStatusException ex) {
             throw ex;
-        } catch (RuntimeException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             // Business rule hatasını yakala ve mesaj olarak döndür
             return ResponseEntity
                     .badRequest() // 400 Bad Request
@@ -67,9 +67,9 @@ public class ReservationController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<Void> deleteReservation(@RequestBody DeleteReservationRequest request) {
-        reservationService.deleteReservation(request, getCurrentCompanyIdFromAuth());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, String>> deleteReservation(@RequestBody DeleteReservationRequest request) {
+        String message = reservationService.deleteReservation(request, getCurrentCompanyIdFromAuth());
+        return ResponseEntity.ok(Map.of("message", message));
     }
 
     @GetMapping("/{id}")
@@ -100,7 +100,7 @@ public class ReservationController {
             return ResponseEntity.ok(Map.of("message", message, "reservationClosed", outcome.isReservationClosed()));
         } catch (ResponseStatusException ex) {
             throw ex;
-        } catch (RuntimeException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -38,6 +38,7 @@ public class Company {
     private String googleCommentsUrl;
 
     @Column(name = "category")
+    @Enumerated(EnumType.STRING)
     private CompanyCategory category;
 
     @Column(name = "start_year")

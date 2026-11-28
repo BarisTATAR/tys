@@ -19,6 +19,10 @@ public class Rating {
     @Column(name = "id")
     private Long id;
 
+    /** Değerlendirmeyi oluşturan işletme; kayıtlar yalnız bu işletmeye görünür. */
+    @Column(name = "company_id")
+    private Long companyId;
+
     @Column(name = "rating_average")
     private BigDecimal ratingAverage;           // Puan (1-5 arası)
 

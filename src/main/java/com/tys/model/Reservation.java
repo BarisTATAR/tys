@@ -46,9 +46,11 @@ public class Reservation {
     private LocalDateTime checkOutDate;
 
     @Column(name = "reservation_type")      //Reservation type
+    @Enumerated(EnumType.STRING)
     private ReservationType reservationType;
 
     @Column(name = "reservation_status")      //Reservation end date
+    @Enumerated(EnumType.STRING)
     private ReservationStatus reservationStatus;
 
     @ManyToOne

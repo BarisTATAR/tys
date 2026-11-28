@@ -2,8 +2,11 @@ package com.tys.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tys.request.CreateSMSRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,8 +16,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class VatanSmsService {
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 20_000;
+
     private final String smsUrl;
     private final String apiId;
     private final String apiKey;
@@ -33,11 +40,14 @@ public class VatanSmsService {
 
     public void sendSms(CreateSMSRequest request) {
         if (apiId == null || apiId.isBlank() || apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("SMS servis bilgileri tanımlı değil.");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "SMS servis bilgileri tanımlı değil.");
         }
         try {
             URL url = new URL(smsUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            // Sağlayıcı yanıt vermezse istek iş parçacığı süresiz beklemesin
+            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            conn.setReadTimeout(READ_TIMEOUT_MS);
 
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -60,18 +70,22 @@ public class VatanSmsService {
                 os.write(input, 0, input.length);
             }
 
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("SMS gönderilemedi.");
+            int status = conn.getResponseCode();
+            if (status != 200) {
+                log.warn("SMS sağlayıcısı isteği reddetti: HTTP {}", status);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "SMS gönderilemedi: sağlayıcı isteği kabul etmedi (HTTP " + status + ").");
             }
 
             InputStream is = conn.getErrorStream();
             if (is != null) {
                 is.close();
             }
-        } catch (RuntimeException e) {
+        } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("SMS servis hatası");
+            log.warn("SMS sağlayıcısına ulaşılamadı: {}", e.toString());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "SMS gönderilemedi: sağlayıcıya ulaşılamadı.");
         }
     }
 }

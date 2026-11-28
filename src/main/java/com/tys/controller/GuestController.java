@@ -71,6 +71,18 @@ public class GuestController {
         return ResponseEntity.ok(guestService.getAllGuestForSMS(companyId));
     }
 
+    /** İşletmenin misafirlerinde kayıtlı iller (SMS il filtresi). */
+    @GetMapping("/sms/cities")
+    public ResponseEntity<List<String>> getCitiesForSMS() {
+        return ResponseEntity.ok(guestService.getCitiesForSMS(getCurrentCompanyIdFromAuth()));
+    }
+
+    /** Seçilen ildeki misafirlerin telefon numaraları (yalnız oturumdaki işletme). */
+    @GetMapping("/city/all/{city}")
+    public ResponseEntity<List<String>> getAllGuestInCity(@PathVariable("city") String city) {
+        return ResponseEntity.ok(guestService.getAllGuestInCity(city, getCurrentCompanyIdFromAuth()));
+    }
+
     @GetMapping("/year/all/{year}")
     public ResponseEntity<List<String>> getAllGuestInYear(@PathVariable("year") int year) {
         Long companyId = getCurrentCompanyIdFromAuth();
@@ -85,13 +97,19 @@ public class GuestController {
 
     @PostMapping("/import")
     public ResponseEntity<String> importExcel(@RequestParam("file") MultipartFile file) {
+        Long companyId = getCurrentCompanyIdFromAuth();
+        String name = file == null || file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        if (file == null || file.isEmpty() || !name.endsWith(".xlsx")) {
+            return ResponseEntity.badRequest().body("Hata: Geçerli bir Excel (.xlsx) dosyası yükleyin.");
+        }
         try {
-            Long companyId = getCurrentCompanyIdFromAuth();
-
             excelImportService.importGuestsFromExcel(file, companyId);
             return ResponseEntity.ok("Excel başarıyla içeri aktarıldı!");
+        } catch (org.apache.poi.UnsupportedFileFormatException | org.apache.poi.EmptyFileException e) {
+            // Kütüphanenin iç hata metni kullanıcıya gösterilmez
+            return ResponseEntity.badRequest().body("Hata: Dosya okunamadı; geçerli bir Excel (.xlsx) dosyası yükleyin.");
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Hata: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Hata: " + e.getMessage());
         } catch (Exception e) {
             log.error("Excel import failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Excel dosyası işlenemedi.");

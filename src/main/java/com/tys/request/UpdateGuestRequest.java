@@ -21,6 +21,8 @@ public class UpdateGuestRequest {
     private String email;
     private String job;
     private String address;
+    /** İl (Türk vatandaşları için Misafir Ekle ekranında seçilir; SMS il filtresi bu alanı kullanır) */
+    private String city;
     private SnfEnumUlkeler countryCode;
     private SnfEnumKonaklayanKullanimSekli guestUsageType;
     private String plateNumber;

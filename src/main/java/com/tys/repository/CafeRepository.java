@@ -10,4 +10,9 @@ import java.util.List;
 public interface CafeRepository extends JpaRepository<Cafe, Long> {
 
     List<Cafe> findAllByCompanyId(Long companyId);
+
+    /** Menü: yalnız aktif (menüden kaldırılmamış) ürünler. */
+    List<Cafe> findAllByCompanyIdAndActiveTrue(Long companyId);
+
+    long countByCompanyId(Long companyId);
 }

@@ -45,4 +45,31 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
             """)
     List<Guest> findAllByCompanyIdWithReservations(@Param("companyId") Long companyId);
 
+
+    long countByCompany_Id(Long companyId);
+
+    /** İşletmeye ait (işletme kaydı veya işletmenin rezervasyonu üzerinden) TCKN eşleşmeleri; en yeni kayıt önce. */
+    @Query("""
+            SELECT DISTINCT g FROM Guest g
+            LEFT JOIN g.reservations r
+            WHERE g.identityNumber = :identityNumber
+              AND (g.company.id = :companyId OR (g.company IS NULL AND r.company.id = :companyId))
+            ORDER BY g.id DESC
+            """)
+    List<Guest> findAllByIdentityNumberInCompany(@Param("identityNumber") String identityNumber,
+                                                 @Param("companyId") Long companyId);
+
+    /** İşletmenin misafirlerinde kayıtlı iller (SMS il filtresi). */
+    @Query("""
+            SELECT DISTINCT g.city FROM Guest g
+            WHERE g.company.id = :companyId AND g.city IS NOT NULL AND g.city <> ''
+            ORDER BY g.city
+            """)
+    List<String> findCitiesByCompanyId(@Param("companyId") Long companyId);
+
+    @Query("""
+            SELECT g FROM Guest g
+            WHERE g.company.id = :companyId AND LOWER(g.city) = LOWER(:city)
+            """)
+    List<Guest> findAllByCompanyIdAndCity(@Param("companyId") Long companyId, @Param("city") String city);
 }

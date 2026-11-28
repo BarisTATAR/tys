@@ -17,6 +17,8 @@ public class ReservationDto {
     private LocalDate checkOutDate;
     private String reservationMessage;
     private String kbsWarning;
+    /** Son KBS uyarı kaydının numarası: arayüz kaydettikten sonra yeni bir uyarı oluşup oluşmadığını bununla anlar. */
+    private Long kbsWarningId;
     private ReservationType reservationType;
     private ReservationStatus reservationStatus;
     private LocalDateTime reservationDate;

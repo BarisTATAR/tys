@@ -65,7 +65,7 @@
           <tr><td>JWT olmadan <code>/reservation/all</code></td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>HTTP 401</td></tr>
           <tr><td>Company login (doğru)</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>Token üretiliyor</td></tr>
           <tr><td>Company login (yanlış şifre)</td><td><span class="badge warn">WARN</span></td><td class="p1">P1</td><td>HTTP 200 + <code>success:false</code> (401 olmalı)</td></tr>
-          <tr><td>Admin login</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td><code>admin / 123456</code></td></tr>
+          <tr><td>Admin login</td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td><code>admin (kimlik bilgisi güvenlik nedeniyle rapordan çıkarıldı)</code></td></tr>
           <tr><td><code>/room/company-rooms</code></td><td><span class="badge pass">PASS</span></td><td class="p0">P0</td><td>4 oda</td></tr>
           <tr><td><code>/room/availableRooms</code> (ISO datetime)</td><td><span class="badge pass">PASS</span></td><td class="p1">P1</td><td>DATE_TIME zorunlu</td></tr>
           <tr><td><code>/guest/all</code>, <code>/cafe/all</code></td><td><span class="badge pass">PASS</span></td><td class="p2">P2</td><td>—</td></tr>

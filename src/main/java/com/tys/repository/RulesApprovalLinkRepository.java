@@ -14,4 +14,6 @@ public interface RulesApprovalLinkRepository extends JpaRepository<RulesApproval
     List<RulesApprovalLink> findAllByReservationIdOrderByCreatedAtDesc(Long reservationId);
 
     Optional<RulesApprovalLink> findFirstByReservationIdAndApprovedTrueOrderByApprovedAtDesc(Long reservationId);
+
+    void deleteAllByCompanyId(Long companyId);
 }

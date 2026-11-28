@@ -25,4 +25,8 @@ public class ReservationCafeItem {
 
     @Column(name = "count")
     private Integer count;
+
+    /** Kalem eklendiği andaki birim fiyat; menü fiyatı sonradan değişse de hesap değişmez. */
+    @Column(name = "unit_price")
+    private java.math.BigDecimal unitPrice;
 }

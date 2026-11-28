@@ -49,8 +49,11 @@ public class GuestService {
         if (request.getIdentityNumber() == null || request.getIdentityNumber().isBlank()) {
             throw new IllegalArgumentException("TCKN gereklidir.");
         }
+        InputRules.plainText(request.getCity(), "Şehir", 100, false);
+        InputRules.plainText(request.getJob(), "Meslek", 100, false);
+        InputRules.plainText(request.getAddress(), "Adres", 500, false);
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturumdaki işletme bulunamadı."));
         Guest guest = guestMapper.createGuestRequestToEntity(request);
         guest.setCompany(company);
         guestRepository.save(guest);
@@ -58,15 +61,27 @@ public class GuestService {
 
     @Transactional
     public void deleteGuest(DeleteGuestRequest request, Long companyId) {
-        Guest guest = guestRepository.findById(request.getId())
-                .orElseThrow(() -> new RuntimeException("Guests not found with Id: " + request.getId()));
+        Guest guest = requireGuest(request == null ? null : request.getId());
         assertGuestCompany(guest, companyId);
+        if (guest.getReservations() != null && !guest.getReservations().isEmpty()) {
+            // Konaklama geçmişi (KBS bildirimi yapılmış kayıtlar dahil) korunur
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Misafir rezervasyon kayıtlarında yer aldığı için silinemez.");
+        }
         guestRepository.delete(guest);
+    }
+
+    private Guest requireGuest(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Misafir seçilmelidir.");
+        }
+        return guestRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
     }
 
     @Transactional
     public void updateGuest(UpdateGuestRequest request, Long companyId) {
-        Guest existingGuest = guestRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Guest not found with Id: " + request.getId()));
+        Guest existingGuest = requireGuest(request == null ? null : request.getId());
         assertGuestCompany(existingGuest, companyId);
         InputRules.guestFields(
                 request.getName(),
@@ -77,12 +92,29 @@ public class GuestService {
                 request.getPlateNumber(),
                 existingGuest.getIdentityNumber(),
                 existingGuest.getPhoneNumber());
-        guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
-        if (request.getCheckInDate() != null) {
-            existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
+        InputRules.plainText(request.getCity(), "Şehir", 100, false);
+        InputRules.plainText(request.getJob(), "Meslek", 100, false);
+        InputRules.plainText(request.getAddress(), "Adres", 500, false);
+        // Konaklayan misafir (check-in yapılmış rezervasyonda): giriş/çıkış KBS'ye bildirildiği için
+        // TCKN değiştirilemez, giriş/çıkış tarihleri yalnız rezervasyon akışında (check-in / check-out) değişir
+        boolean staying = isInCheckedInReservation(existingGuest);
+        if (staying && existingGuest.getCheckInDate() != null && existingGuest.getCheckOutDate() == null
+                && ReservationService.identityChanged(existingGuest.getIdentityNumber(), request.getIdentityNumber())) {
+            throw new IllegalArgumentException(ReservationService.STAYING_GUEST_TCKN_LOCKED);
         }
-        if (request.getCheckOutDate() != null) {
-            existingGuest.setCheckOutDate(request.getCheckOutDate().atStartOfDay());
+        LocalDateTime keptCheckIn = existingGuest.getCheckInDate();
+        LocalDateTime keptCheckOut = existingGuest.getCheckOutDate();
+        guestMapper.updateExistingGuestWithGuestRequest(request, existingGuest);
+        if (staying) {
+            existingGuest.setCheckInDate(keptCheckIn);
+            existingGuest.setCheckOutDate(keptCheckOut);
+        } else {
+            if (request.getCheckInDate() != null) {
+                existingGuest.setCheckInDate(request.getCheckInDate().atStartOfDay());
+            }
+            if (request.getCheckOutDate() != null) {
+                existingGuest.setCheckOutDate(request.getCheckOutDate().atStartOfDay());
+            }
         }
         guestRepository.save(existingGuest);
     }
@@ -105,15 +137,18 @@ public class GuestService {
 
     @Transactional(readOnly = true)
     public GuestDto getGuestByIdentityNumber(String identityNumber, Long companyId) {
-        Guest guest = guestRepository.findByIdentityNumber(identityNumber)
+        // Aynı kişi birden fazla otelde kayıtlı olabilir: yalnız bu işletmenin en güncel kaydı döner.
+        // Başka işletmedeki kayıt ile olmayan kayıt ayırt edilemez (her ikisi 404).
+        String key = identityNumber == null ? "" : identityNumber.trim();
+        Guest guest = guestRepository.findAllByIdentityNumberInCompany(key, companyId).stream()
+                .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Misafir bulunamadı."));
-        assertGuestCompany(guest, companyId);
         return guestMapper.toDto(guest);
     }
 
     public void assertPhonesBelongToCompany(List<String> phones, Long companyId) {
         if (phones == null || phones.isEmpty()) {
-            throw new RuntimeException("SMS için numara gerekli.");
+            throw new IllegalArgumentException("SMS için numara gerekli.");
         }
         Set<String> allowed = new HashSet<>();
         for (String phone : getAllGuestForSMS(companyId)) {
@@ -121,7 +156,7 @@ public class GuestService {
         }
         for (String phone : phones) {
             if (!allowed.contains(phoneKey(phone))) {
-                throw new RuntimeException("SMS yalnızca bu işletmenin kayıtlı misafir numaralarına gönderilebilir.");
+                throw new IllegalArgumentException("SMS yalnızca bu işletmenin kayıtlı misafir numaralarına gönderilebilir.");
             }
         }
     }
@@ -140,6 +175,11 @@ public class GuestService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu kayda erişim yok.");
     }
 
+    private boolean isInCheckedInReservation(Guest guest) {
+        return guest.getReservations() != null && guest.getReservations().stream()
+                .anyMatch(reservation -> reservation.getReservationStatus() == com.tys.enums.ReservationStatus.CHECK_IN_DONE);
+    }
+
     private String phoneKey(String phone) {
         if (phone == null) {
             return "";
@@ -151,7 +191,24 @@ public class GuestService {
         return digits;
     }
 
+    public List<String> getCitiesForSMS(Long companyId) {
+        return guestRepository.findCitiesByCompanyId(companyId);
+    }
+
+    public List<String> getAllGuestInCity(String city, Long companyId) {
+        InputRules.plainText(city, "Şehir", 100, true);
+        return guestRepository.findAllByCompanyIdAndCity(companyId, city.trim())
+                .stream()
+                .map(Guest::getPhoneNumber)
+                .filter(phone -> phone != null && !phone.isBlank())
+                .distinct()
+                .toList();
+    }
+
     public List<String> getAllGuestInYear(int year, Long companyId) {
+        if (year < 2000 || year > 2100) {
+            throw new IllegalArgumentException("Yıl 2000 ile 2100 arasında olmalıdır.");
+        }
         LocalDateTime start = LocalDate.of(year, 1, 1).atStartOfDay();
         LocalDateTime end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
         return guestRepository.findAllByCheckInYearAndCompanyId(start, end, companyId)
@@ -163,6 +220,9 @@ public class GuestService {
     }
 
     public List<String> getAllGuestForDay(int day, Long companyId) {
+        if (day < 1 || day > 366) {
+            throw new IllegalArgumentException("Konaklama günü 1 ile 366 arasında olmalıdır.");
+        }
         return guestRepository.findAllByCompanyIdWithReservations(companyId)
                 .stream()
                 .filter(guest -> matchesStayDayCriteria(guest, companyId, day))

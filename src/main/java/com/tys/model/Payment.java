@@ -25,16 +25,18 @@ public class Payment {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    @Column(name = "advance payment")
+    @Column(name = "advance_payment")
     private BigDecimal advancePayment;
 
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
     @Column(name = "advance_payment_type")
+    @Enumerated(EnumType.STRING)
     private PaymentType advancePaymentType;
 
     @Column(name = "close_payment_type")
+    @Enumerated(EnumType.STRING)
     private PaymentType closePaymentType;
 
     @Column(name = "paid_amount")

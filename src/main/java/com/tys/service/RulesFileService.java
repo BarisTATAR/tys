@@ -23,12 +23,22 @@ public class RulesFileService {
 
     @Transactional
     public RulesFileDto uploadWord(Long companyId, MultipartFile file) throws IOException {
+        String fileName = file == null || file.getOriginalFilename() == null ? "" : file.getOriginalFilename().trim();
+        if (file == null || file.isEmpty() || !fileName.toLowerCase().endsWith(".docx")) {
+            throw new IllegalArgumentException("Yalnız Word (.docx) dosyası yüklenebilir.");
+        }
         // Word dosyasını text’e çevir
         StringBuilder text = new StringBuilder();
         try (XWPFDocument doc = new XWPFDocument(file.getInputStream())) {
             for (XWPFParagraph para : doc.getParagraphs()) {
                 text.append(para.getText()).append("\n");
             }
+        } catch (org.apache.poi.UnsupportedFileFormatException | org.apache.poi.EmptyFileException
+                 | org.apache.poi.ooxml.POIXMLException ex) {
+            throw new IllegalArgumentException("Dosya okunamadı; geçerli bir Word (.docx) dosyası yükleyin.");
+        }
+        if (text.toString().isBlank()) {
+            throw new IllegalArgumentException("Word dosyasında kural metni bulunamadı.");
         }
 
         // DB kaydı
@@ -37,7 +47,7 @@ public class RulesFileService {
         rulesFile.setCompanyId(companyId);
         rulesFile.setFileData(file.getBytes());
         rulesFile.setRulesText(text.toString());
-        rulesFile.setFileName(file.getOriginalFilename());
+        rulesFile.setFileName(fileName.length() > 255 ? fileName.substring(0, 255) : fileName);
         rulesFile.setContentType(file.getContentType());
         rulesFile.setCreatedAt(LocalDateTime.now());
 
