@@ -73,6 +73,9 @@ public class Reservation {
             joinColumns = @JoinColumn(name = "reservation_id"),
             inverseJoinColumns = @JoinColumn(name = "guest_id")
     )
+    // Sabit sıra (kayıt sırası): ara tablo güncellemede yeniden yazılınca sıra değişmesin.
+    // Rezervasyonun sahibi sıraya göre değil isContact ile belirlenir.
+    @jakarta.persistence.OrderBy("id ASC")
     private List<Guest> guests = new ArrayList<>();
 
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)

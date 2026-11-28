@@ -252,7 +252,7 @@ public class ReservationService {
     }
 
     static final String STAYING_GUEST_TCKN_LOCKED =
-            "KBS'ye girişi bildirilmiş misafirin TCKN'si değiştirilemez. Yanlış girildiyse misafire erken check-out yapıp doğru TCKN ile yeniden ekleyin.";
+            "Check-in yapılmış misafirin TCKN'si değiştirilemez. Yanlış girildiyse misafire erken check-out yapıp doğru TCKN ile yeniden ekleyin.";
 
     /**
      * Check-in yapılmış rezervasyonda konaklayan misafir güncellemeyle listeden çıkarılamaz (KBS'ye çıkış gitmezdi)
@@ -275,7 +275,7 @@ public class ReservationService {
             Guest incoming = incomingById.get(staying.getId());
             if (incoming == null) {
                 throw new IllegalArgumentException(
-                        "Check-in yapılmış misafir listeden çıkarılamaz (KBS'ye giriş bildirildi). Misafir ayrılıyorsa erken check-out yapın.");
+                        "Check-in yapılmış misafir listeden çıkarılamaz. Misafir ayrılıyorsa erken check-out yapın (KBS'ye çıkış bildirilir).");
             }
             if (identityChanged(staying.getIdentityNumber(), incoming.getIdentityNumber())) {
                 throw new IllegalArgumentException(STAYING_GUEST_TCKN_LOCKED);
@@ -612,7 +612,7 @@ public class ReservationService {
         }
         if (from == ReservationStatus.CHECK_IN_DONE && to != ReservationStatus.CHECK_OUT_DONE) {
             throw new IllegalArgumentException(
-                    "Check-in yapılmış rezervasyon önceki duruma alınamaz (KBS'ye giriş bildirildi). Misafir ayrılıyorsa check-out yapın.");
+                    "Check-in yapılmış rezervasyon önceki duruma alınamaz. Misafir ayrılıyorsa check-out yapın.");
         }
     }
 

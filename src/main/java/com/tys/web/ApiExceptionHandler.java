@@ -41,6 +41,31 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 
+    /**
+     * Yol/sorgu parametresi beklenen türe çevrilemedi (ör. /reservation/abc). Java'nın iç mesajı
+     * ("For input string: ...") yerine anlaşılır mesaj döner.
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", invalidValueMessage(ex.getName())));
+    }
+
+    /** Servis katmanında sayıya çevrilemeyen değer: iç mesaj yerine anlaşılır mesaj. */
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<Map<String, String>> handleNumberFormat(NumberFormatException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", invalidValueMessage(null)));
+    }
+
+    static String invalidValueMessage(String parameterName) {
+        if (parameterName == null || parameterName.isBlank()) {
+            return "Geçersiz sayı biçimi.";
+        }
+        if (parameterName.equalsIgnoreCase("id") || parameterName.endsWith("Id")) {
+            return "Geçersiz kayıt numarası.";
+        }
+        return "Geçersiz değer: " + parameterName + ".";
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         String message = ex.getMessage() == null || ex.getMessage().isBlank()
